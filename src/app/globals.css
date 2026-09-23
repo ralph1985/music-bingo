@@ -68,4 +68,8 @@ a {
 .song-cell { min-height: 112px; padding: 12px 9px; border: 1px solid #ffffff29; border-radius: 14px; background: #ffffff0c; display: flex; flex-direction: column; justify-content: space-between; }
 .song-cell:nth-child(3n + 1) { border-color: #ff4f9a80; } .song-cell:nth-child(3n + 2) { border-color: #c6ff4380; } .song-cell:nth-child(3n) { border-color: #9873ff80; }
 .song-cell strong { font-size: .86rem; line-height: 1.1; }.song-cell span { color: var(--muted); font-size: .7rem; }
+.site-footer { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 18px 20px 26px; color: var(--muted); font-size: .7rem; }
+.site-footer a { display: inline-flex; border-radius: 4px; outline-offset: 4px; }
+.site-footer a:focus-visible { outline: 2px solid var(--lime); }
+.site-footer img { width: 108px; height: auto; opacity: .82; }
 @media (min-width: 620px) { .entry-grid { grid-template-columns: 1fr 1fr; }.hero { padding-top: 110px; }.card-grid { grid-template-columns: repeat(4, 1fr); } }
