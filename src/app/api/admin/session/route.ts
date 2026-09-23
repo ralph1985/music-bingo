@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { createAdminSession, verifyAdminPassword } from "@/server/auth/admin-auth";
+import { ADMIN_SESSION_COOKIE } from "@/server/auth/admin-session";
 
-const SESSION_COOKIE = "music_bingo_admin";
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 12;
 
 export async function POST(request: Request) {
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   }
 
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(SESSION_COOKIE, createAdminSession(sessionSecret, Date.now(), SESSION_DURATION_MS), {
+  response.cookies.set(ADMIN_SESSION_COOKIE, createAdminSession(sessionSecret, Date.now(), SESSION_DURATION_MS), {
     httpOnly: true,
     sameSite: "lax",
     secure: true,
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
 export function DELETE() {
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(SESSION_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
+  response.cookies.set(ADMIN_SESSION_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
   return response;
 }
 
