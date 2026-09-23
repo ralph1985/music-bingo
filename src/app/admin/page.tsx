@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 
 import AdminLogin from "@/components/admin-login";
+import PlaylistImport from "@/components/playlist-import";
 import { ADMIN_SESSION_COOKIE, hasAdminSession } from "@/server/auth/admin-session";
 
 export default async function AdminPreview() {
@@ -16,10 +17,13 @@ export default async function AdminPreview() {
     <p className="eyebrow">ZONA DE CONTROL</p>
     <h1 className="screen-title">Monta la<br /><em>partida.</em></h1>
     <p className="screen-subtitle">Esta será la entrada exclusiva para quien dirige la música y la partida.</p>
-    {authenticated ? <section className="panel">
-      <span className="status">SESIÓN DEL ADMINISTRADOR ACTIVA</span>
-      <p style={{ marginTop: 18 }}>El siguiente paso es importar canciones para crear la partida.</p>
-    </section> : <section className="panel">
+    {authenticated ? <>
+      <section className="panel">
+        <span className="status">SESIÓN DEL ADMINISTRADOR ACTIVA</span>
+        <p style={{ marginTop: 18 }}>Carga la playlist para previsualizar las canciones antes de crear la partida.</p>
+      </section>
+      <PlaylistImport />
+    </> : <section className="panel">
       <span className="status">ACCESO DEL ADMINISTRADOR</span>
       <div style={{ marginTop: 18 }}><AdminLogin /></div>
     </section>}
