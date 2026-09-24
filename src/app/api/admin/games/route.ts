@@ -7,6 +7,8 @@ import { createAdminGame } from "@/server/games/create-admin-game";
 
 const MAX_PLAYLIST_LENGTH = 150_000;
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   const cookieStore = await cookies();
   const authorized = hasAdminSession(
@@ -66,7 +68,7 @@ export async function DELETE(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const cookieStore = await cookies();
   const authorized = hasAdminSession(
     cookieStore.get(ADMIN_SESSION_COOKIE)?.value,
@@ -83,7 +85,10 @@ export async function GET() {
   }
 
   try {
-    return NextResponse.json(await getActiveGameCommand({ cloudUrl, secret }));
+    const joinCode = new URL(request.url).searchParams.get("joinCode") ?? undefined;
+    return NextResponse.json(await getActiveGameCommand({ cloudUrl, joinCode, secret }), {
+      headers: { "cache-control": "no-store" },
+    });
   } catch {
     return NextResponse.json({ error: "No se pudo consultar la partida activa." }, { status: 422 });
   }

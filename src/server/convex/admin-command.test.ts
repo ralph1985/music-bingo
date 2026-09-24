@@ -95,7 +95,10 @@ describe("admin Convex command", () => {
   it("reads the active game only from the administrative Convex endpoint", async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       calledSongIds: [],
+      fullCardWinnerPlayerId: null,
       joinCode: "FIESTA",
+      lineWinnerPlayerId: null,
+      players: [],
       playlist: [],
       status: "waiting",
     }), { status: 200 }));
@@ -104,7 +107,7 @@ describe("admin Convex command", () => {
       cloudUrl: "https://example.convex.cloud",
       secret: "shared-test-secret",
       fetcher,
-    })).resolves.toEqual({ calledSongIds: [], joinCode: "FIESTA", playlist: [], status: "waiting" });
+    })).resolves.toEqual({ calledSongIds: [], fullCardWinnerPlayerId: null, joinCode: "FIESTA", lineWinnerPlayerId: null, players: [], playlist: [], status: "waiting" });
 
     expect(fetcher).toHaveBeenCalledWith("https://example.convex.site/admin/games", {
       method: "GET",
