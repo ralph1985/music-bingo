@@ -258,4 +258,17 @@ describe("game storage", () => {
     });
     expect(game?.game).not.toHaveProperty("calledSongIds");
   });
+
+  it("closes new joins when the host starts the round before any song is called", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 12 }, (_, index) => ({ artist: `Artista ${index}`, id: `song-${index}`, title: `Canción ${index}` }));
+    await t.mutation(internal.games.createGame, { joinCode: "EMPEZAR", playlist });
+    await t.mutation(internal.games.startGame, { joinCode: "EMPEZAR" });
+
+    await expect(t.mutation(api.games.joinPlayer, {
+      joinCode: "EMPEZAR",
+      name: "Llega tarde",
+      playerIdentity: "late-player",
+    })).rejects.toThrow("Game not found.");
+  });
 });

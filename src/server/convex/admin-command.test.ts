@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { ConvexCommandError, callSongCommand, cancelGameCommand, createGameCommand, deriveConvexSiteUrl, getActiveGameCommand } from "./admin-command";
+import { ConvexCommandError, callSongCommand, cancelGameCommand, createGameCommand, deriveConvexSiteUrl, getActiveGameCommand, startGameCommand } from "./admin-command";
 
 describe("admin Convex command", () => {
   it("derives the Convex HTTP site URL from the configured cloud URL", () => {
@@ -99,11 +99,31 @@ describe("admin Convex command", () => {
       cloudUrl: "https://example.convex.cloud",
       secret: "shared-test-secret",
       fetcher,
-    })).resolves.toEqual({ joinCode: "FIESTA" });
+    })).resolves.toEqual({ joinCode: "FIESTA", status: "waiting" });
 
     expect(fetcher).toHaveBeenCalledWith("https://example.convex.site/admin/games", {
       method: "GET",
       headers: { "x-admin-command-secret": "shared-test-secret" },
+    });
+  });
+
+  it("sends a start command only to the administrative Convex endpoint", async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+
+    await expect(startGameCommand({
+      cloudUrl: "https://example.convex.cloud",
+      secret: "shared-test-secret",
+      joinCode: "FIESTA",
+      fetcher,
+    })).resolves.toBeUndefined();
+
+    expect(fetcher).toHaveBeenCalledWith("https://example.convex.site/admin/games/start", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-admin-command-secret": "shared-test-secret",
+      },
+      body: JSON.stringify({ joinCode: "FIESTA" }),
     });
   });
 });

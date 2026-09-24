@@ -10,7 +10,7 @@ type ImportResult = { songs: Song[]; errors: { line: number; message: string }[]
 
 export default function PlaylistImport() {
   const [calledSongIds, setCalledSongIds] = useState<string[]>([]);
-  const [createdGame, setCreatedGame] = useState<{ joinCode: string } | null>(null);
+  const [createdGame, setCreatedGame] = useState<{ joinCode: string; status: "waiting" | "playing" } | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -19,10 +19,10 @@ export default function PlaylistImport() {
 
   useEffect(() => {
     void fetch("/api/admin/games")
-      .then(async (response) => response.ok ? await response.json() as { joinCode?: unknown } : null)
+      .then(async (response) => response.ok ? await response.json() as { joinCode?: unknown; status?: unknown } : null)
       .then((game) => {
-        if (typeof game?.joinCode === "string") {
-          setCreatedGame({ joinCode: game.joinCode });
+        if (typeof game?.joinCode === "string" && (game.status === "waiting" || game.status === "playing")) {
+          setCreatedGame({ joinCode: game.joinCode, status: game.status });
         }
       });
   }, []);
@@ -65,7 +65,25 @@ export default function PlaylistImport() {
       return;
     }
 
-    setCreatedGame(await response.json() as { joinCode: string });
+    const game = await response.json() as { joinCode: string };
+    setCreatedGame({ ...game, status: "waiting" });
+  }
+
+  async function startGame() {
+    if (!createdGame) return;
+    setPending(true);
+    setError(null);
+    const response = await fetch("/api/admin/games/start", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ joinCode: createdGame.joinCode }),
+    });
+    setPending(false);
+    if (!response.ok) {
+      setError("No se pudo iniciar la partida.");
+      return;
+    }
+    setCreatedGame({ ...createdGame, status: "playing" });
   }
 
   async function callSong(songId: string) {
@@ -130,8 +148,10 @@ export default function PlaylistImport() {
     </div> : null}
     {createdGame ? <div className="import-result" role="status">
       <p>Partida creada con código <strong>{createdGame.joinCode}</strong>.</p>
+      <p>{createdGame.status === "waiting" ? "Inscripciones abiertas." : "Partida en curso: inscripciones cerradas."}</p>
       <a className="button" href={playerUrl ?? `/play/${createdGame.joinCode}`}>Abrir enlace de jugadores</a>
       {playerUrl ? <QrCode url={playerUrl} /> : null}
+      {createdGame.status === "waiting" ? <button className="button" disabled={pending} onClick={startGame} type="button">Iniciar partida y cerrar inscripciones</button> : null}
       <button className="button" disabled={pending} onClick={cancelGame} type="button">Cancelar partida</button>
       <p className="field-label" style={{ marginTop: 18 }}>ANUNCIAR CANCIÓN</p>
       {result?.songs.map((song, index) => {

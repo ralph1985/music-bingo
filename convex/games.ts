@@ -90,6 +90,23 @@ export const callSong = internalMutation({
   },
 });
 
+export const startGame = internalMutation({
+  args: { joinCode: v.string() },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_joinCode", (q) => q.eq("joinCode", args.joinCode))
+      .unique();
+
+    if (!game || game.status !== "waiting") {
+      return null;
+    }
+
+    await ctx.db.patch("games", game._id, { status: "playing" });
+    return null;
+  },
+});
+
 export const cancelGame = internalMutation({
   args: { joinCode: v.string() },
   handler: async (ctx, args) => {
