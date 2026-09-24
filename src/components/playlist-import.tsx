@@ -31,7 +31,7 @@ export default function PlaylistImport() {
 
   useEffect(() => {
     const url = currentJoinCode ? `/api/admin/games?joinCode=${encodeURIComponent(currentJoinCode)}` : "/api/admin/games";
-    const loadGame = () => fetch(url)
+    const loadGame = () => fetch(url, { cache: "no-store" })
       .then(async (response) => response.ok ? await response.json() as { calledSongIds?: unknown; fullCardWinnerPlayerId?: unknown; joinCode?: unknown; lineWinnerPlayerId?: unknown; players?: unknown; playlist?: unknown; status?: unknown } : null)
       .then((game) => {
         if (typeof game?.joinCode === "string" && (game.status === "waiting" || game.status === "playing" || game.status === "completed")) {
