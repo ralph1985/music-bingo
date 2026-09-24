@@ -139,7 +139,7 @@ describe("game storage", () => {
     ).rejects.toThrow("Player name");
   });
 
-  it("only lets a player mark one of their own card songs after it is called", async () => {
+  it("lets a player freely correct marks on their own card before claiming", async () => {
     const t = convexTest(schema, modules);
     const playlist = Array.from({ length: 12 }, (_, index) => ({
       artist: `Artista ${index + 1}`,
@@ -154,12 +154,11 @@ describe("game storage", () => {
     });
     const songId = joined.card.songs[0].id;
 
-    await expect(t.mutation(api.games.markCell, {
+    await t.mutation(api.games.markCell, {
       joinCode: "JOIN-1234",
       playerIdentity: "player-identity-1",
       songId,
-    })).rejects.toThrow("cannot be marked");
-    await t.mutation(internal.games.callSong, { joinCode: "JOIN-1234", songId });
+    });
     await t.mutation(api.games.markCell, {
       joinCode: "JOIN-1234",
       playerIdentity: "player-identity-1",
@@ -170,7 +169,7 @@ describe("game storage", () => {
       joinCode: "JOIN-1234",
       playerIdentity: "player-identity-1",
     });
-    expect(game?.player.markedSongIds).toEqual([songId]);
+    expect(game?.player.markedSongIds).toEqual([]);
   });
 
   it("accepts the first valid line claim for called and marked card songs", async () => {

@@ -196,11 +196,13 @@ export const markCell = mutation({
       !player
       || player.eliminated
       || !player.card.songs.some((song) => song.id === args.songId)
-      || !game.calledSongIds.includes(args.songId)
     ) {
       throw new Error("The selected card cell cannot be marked.");
     }
     if (player.markedSongIds.includes(args.songId)) {
+      await ctx.db.patch("players", player._id, {
+        markedSongIds: player.markedSongIds.filter((songId) => songId !== args.songId),
+      });
       return null;
     }
 
@@ -238,7 +240,6 @@ export const claimLine = mutation({
     }
 
     if (!hasValidLine(player.card, player.markedSongIds, game.calledSongIds)) {
-      await ctx.db.patch("players", player._id, { eliminated: true });
       return null;
     }
 
@@ -274,7 +275,6 @@ export const claimFullCard = mutation({
     }
 
     if (!player.card.songs.every((song) => player.markedSongIds.includes(song.id) && game.calledSongIds.includes(song.id))) {
-      await ctx.db.patch("players", player._id, { eliminated: true });
       return null;
     }
 

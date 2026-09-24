@@ -125,10 +125,10 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
     return <>
       <section className="panel">
         <p className="field-label">PARTIDA {game.game.status === "waiting" ? "EN ESPERA" : "EN CURSO"}</p>
-        <p>{game.game.calledSongCount} canciones anunciadas. Solo puedes tachar canciones que ya han sonado.</p>
+        <p>{game.game.calledSongCount} canciones anunciadas. Puedes marcar y corregir tu cartón; se validará al reclamar.</p>
       </section>
       <section className="card-grid" aria-label="Tu cartón musical">
-        {game.player.card.songs.map((song) => <button aria-pressed={game.player.markedSongIds.includes(song.id)} className="song-cell" disabled={!game.game.calledCardSongIds.includes(song.id)} key={song.id} onClick={() => onMark(song.id)} type="button">
+        {game.player.card.songs.map((song) => <button aria-pressed={game.player.markedSongIds.includes(song.id)} className="song-cell" key={song.id} onClick={() => onMark(song.id)} type="button">
           <strong>{song.title}</strong><span>{song.artist}</span>
         </button>)}
       </section>
