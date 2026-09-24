@@ -84,6 +84,23 @@ describe("game storage", () => {
     ).rejects.toThrow("at least 24 songs");
   });
 
+  it("reports whether a join code can still accept players without exposing the game", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+    await t.mutation(internal.games.createGame, { joinCode: "ABIERTA", playlist });
+
+    await expect(t.query(api.games.getJoinAvailability, { joinCode: "ABIERTA" })).resolves.toEqual({ available: true });
+    await expect(t.query(api.games.getJoinAvailability, { joinCode: "INEXISTENTE" })).resolves.toEqual({ available: false });
+
+    await t.mutation(internal.games.startGame, { joinCode: "ABIERTA" });
+
+    await expect(t.query(api.games.getJoinAvailability, { joinCode: "ABIERTA" })).resolves.toEqual({ available: false });
+  });
+
   it("rejects duplicate song identifiers", async () => {
     const t = convexTest(schema, modules);
     const playlist = Array.from({ length: 24 }, (_, index) => ({

@@ -339,6 +339,18 @@ export const getByCode = internalQuery({
   },
 });
 
+export const getJoinAvailability = query({
+  args: { joinCode: v.string() },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_joinCode", (q) => q.eq("joinCode", args.joinCode))
+      .unique();
+
+    return { available: game?.status === "waiting" };
+  },
+});
+
 export const getPlayerGame = query({
   args: {
     joinCode: v.string(),

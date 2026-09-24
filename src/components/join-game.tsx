@@ -1,7 +1,10 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
+import { useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
+
+import { api } from "../../convex/_generated/api";
 
 type JoinGameProps = {
   initialCode?: string;
@@ -10,12 +13,13 @@ type JoinGameProps = {
 export default function JoinGame({ initialCode = "" }: JoinGameProps) {
   const router = useRouter();
   const [joinCode, setJoinCode] = useState(initialCode);
+  const code = joinCode.trim().toUpperCase();
+  const validCode = /^[A-Z0-9]{6}$/.test(code);
+  const availability = useQuery(api.games.getJoinAvailability, validCode ? { joinCode: code } : "skip");
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const code = joinCode.trim().toUpperCase();
-
-    if (/^[A-Z0-9]{1,12}$/.test(code)) {
+    if (availability?.available) {
       router.push(`/play/${code}`);
     }
   }
@@ -29,14 +33,17 @@ export default function JoinGame({ initialCode = "" }: JoinGameProps) {
         autoComplete="off"
         className="field join-code-input"
         id="joinCode"
-        maxLength={12}
+        maxLength={6}
         name="joinCode"
         onChange={(event) => setJoinCode(event.target.value.toUpperCase())}
         placeholder="EJ. FIESTA"
         required
         value={joinCode}
       />
-      <button className="button" type="submit">Continuar</button>
+      {code.length > 0 && !validCode ? <p role="alert">El código debe tener 6 caracteres.</p> : null}
+      {validCode && availability === undefined ? <p role="status">Comprobando el código…</p> : null}
+      {validCode && availability && !availability.available ? <p role="alert">No hay una partida disponible con este código. Comprueba el código o pide uno nuevo a la organización.</p> : null}
+      <button className="button" disabled={!availability?.available} type="submit">Continuar</button>
     </form>
   </section>;
 }
