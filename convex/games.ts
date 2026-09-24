@@ -1,4 +1,4 @@
-import { internalMutation, internalQuery } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 const MAX_PLAYLIST_SONGS = 75;
@@ -77,13 +77,19 @@ export const callSong = internalMutation({
   },
 });
 
-export const joinPlayer = internalMutation({
+export const joinPlayer = mutation({
   args: {
     joinCode: v.string(),
     name: v.string(),
     playerIdentity: v.string(),
   },
   handler: async (ctx, args) => {
+    const name = args.name.trim();
+
+    if (!name || name.length > 50) {
+      throw new Error("Player name must contain between 1 and 50 characters.");
+    }
+
     const game = await ctx.db
       .query("games")
       .withIndex("by_joinCode", (q) => q.eq("joinCode", args.joinCode))
@@ -110,7 +116,7 @@ export const joinPlayer = internalMutation({
       eliminated: false,
       gameId: game._id,
       markedSongIds: [],
-      name: args.name,
+      name,
       playerIdentity: args.playerIdentity,
     });
 
@@ -125,6 +131,49 @@ export const getByCode = internalQuery({
       .query("games")
       .withIndex("by_joinCode", (q) => q.eq("joinCode", args.joinCode))
       .unique();
+  },
+});
+
+export const getPlayerGame = query({
+  args: {
+    joinCode: v.string(),
+    playerIdentity: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_joinCode", (q) => q.eq("joinCode", args.joinCode))
+      .unique();
+
+    if (!game) {
+      return null;
+    }
+
+    const player = await ctx.db
+      .query("players")
+      .withIndex("by_gameId_and_playerIdentity", (q) =>
+        q.eq("gameId", game._id).eq("playerIdentity", args.playerIdentity),
+      )
+      .unique();
+
+    if (!player) {
+      return null;
+    }
+
+    return {
+      game: {
+        calledSongCount: game.calledSongIds.length,
+        fullCardClaimed: Boolean(game.fullCardWinnerPlayerId),
+        lineClaimed: Boolean(game.lineWinnerPlayerId),
+        status: game.status,
+      },
+      player: {
+        card: player.card,
+        eliminated: player.eliminated,
+        markedSongIds: player.markedSongIds,
+        name: player.name,
+      },
+    };
   },
 });
 

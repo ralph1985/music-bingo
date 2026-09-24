@@ -4,7 +4,7 @@
 import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
 
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import schema from "./schema";
 
 const modules = import.meta.glob("./**/*.ts");
@@ -48,17 +48,65 @@ describe("game storage", () => {
     }));
     await t.mutation(internal.games.createDemoGame, { joinCode: "JOIN-1234", playlist });
 
-    const firstJoin = await t.mutation(internal.games.joinPlayer, {
+    const firstJoin = await t.mutation(api.games.joinPlayer, {
       joinCode: "JOIN-1234",
       name: "Rafa",
       playerIdentity: "player-identity-1",
     });
-    const secondJoin = await t.mutation(internal.games.joinPlayer, {
+    const secondJoin = await t.mutation(api.games.joinPlayer, {
       joinCode: "JOIN-1234",
       name: "Otro nombre",
       playerIdentity: "player-identity-1",
     });
 
     expect(secondJoin).toEqual(firstJoin);
+  });
+
+  it("rejects a blank player name", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 12 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+    await t.mutation(internal.games.createDemoGame, { joinCode: "JOIN-1234", playlist });
+
+    await expect(
+      t.mutation(api.games.joinPlayer, {
+        joinCode: "JOIN-1234",
+        name: "   ",
+        playerIdentity: "player-identity-1",
+      }),
+    ).rejects.toThrow("Player name");
+  });
+
+  it("returns only the player's card and redacted game state", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 13 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+    await t.mutation(internal.games.createDemoGame, { joinCode: "JOIN-1234", playlist });
+    await t.mutation(api.games.joinPlayer, {
+      joinCode: "JOIN-1234",
+      name: "Rafa",
+      playerIdentity: "player-identity-1",
+    });
+    await t.mutation(internal.games.callSong, {
+      joinCode: "JOIN-1234",
+      songId: "song-1",
+    });
+
+    const game = await t.query(api.games.getPlayerGame, {
+      joinCode: "JOIN-1234",
+      playerIdentity: "player-identity-1",
+    });
+
+    expect(game).toMatchObject({
+      game: { calledSongCount: 1, status: "playing" },
+      player: { name: "Rafa" },
+    });
+    expect(game?.game).not.toHaveProperty("calledSongIds");
   });
 });
