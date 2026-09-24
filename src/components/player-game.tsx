@@ -26,6 +26,7 @@ function getStoredGame() {
 
 export default function PlayerGame({ joinCode }: PlayerGameProps) {
   const joinPlayer = useMutation(api.games.joinPlayer);
+  const claimFullCard = useMutation(api.games.claimFullCard);
   const claimLine = useMutation(api.games.claimLine);
   const markCell = useMutation(api.games.markCell);
   const savedGame = useSyncExternalStore(
@@ -104,6 +105,18 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
     }
   }
 
+  async function onClaimFullCard() {
+    if (!playerIdentity) {
+      return;
+    }
+
+    try {
+      await claimFullCard({ joinCode, playerIdentity });
+    } catch {
+      setError("No se pudo comprobar el cartón.");
+    }
+  }
+
   if (playerIdentity && game === undefined) {
     return <section className="panel"><p>Recuperando tu cartón…</p></section>;
   }
@@ -120,6 +133,7 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
         </button>)}
       </section>
       {!game.game.lineClaimed && !game.player.eliminated ? <button className="button" onClick={onClaimLine} type="button">Reclamar línea</button> : null}
+      {!game.game.fullCardClaimed && !game.player.eliminated ? <button className="button" onClick={onClaimFullCard} type="button">Reclamar cartón completo</button> : null}
       {error ? <p role="alert">{error}</p> : null}
     </>;
   }
