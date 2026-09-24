@@ -194,19 +194,20 @@ export const markCell = mutation({
 
     if (
       !player
-      || player.eliminated
       || !player.card.songs.some((song) => song.id === args.songId)
     ) {
       throw new Error("The selected card cell cannot be marked.");
     }
     if (player.markedSongIds.includes(args.songId)) {
       await ctx.db.patch("players", player._id, {
+        eliminated: false,
         markedSongIds: player.markedSongIds.filter((songId) => songId !== args.songId),
       });
       return null;
     }
 
     await ctx.db.patch("players", player._id, {
+      eliminated: false,
       markedSongIds: [...player.markedSongIds, args.songId],
     });
     return null;
