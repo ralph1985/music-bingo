@@ -12,6 +12,13 @@ type PlayerGameProps = {
 
 let cachedStoredGame: ReturnType<typeof loadLocalGame> | undefined;
 
+function hasMarkedVerticalLine(markedSongIds: string[], cardSongIds: string[]): boolean {
+  return Array.from({ length: 3 }, (_, column) =>
+    Array.from({ length: 4 }, (_, row) => cardSongIds[row * 3 + column])
+      .every((songId) => markedSongIds.includes(songId)),
+  ).some(Boolean);
+}
+
 function subscribeToLocalGame(): () => void {
   return () => {};
 }
@@ -124,6 +131,10 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
   }
 
   if (playerIdentity && game) {
+    const cardSongIds = game.player.card.songs.map((song) => song.id);
+    const canClaimLine = hasMarkedVerticalLine(game.player.markedSongIds, cardSongIds);
+    const canClaimFullCard = cardSongIds.every((songId) => game.player.markedSongIds.includes(songId));
+
     return <>
       <section className="panel">
         <p className="field-label">PARTIDA {game.game.status === "waiting" ? "EN ESPERA" : "EN CURSO"}</p>
@@ -134,8 +145,8 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
           <strong>{song.title}</strong><span>{song.artist}</span>
         </button>)}
       </section>
-      {!game.game.lineClaimed && !game.player.eliminated ? <button className="button" onClick={onClaimLine} type="button">Reclamar línea vertical (4 canciones)</button> : null}
-      {!game.game.fullCardClaimed && !game.player.eliminated ? <button className="button" onClick={onClaimFullCard} type="button">Reclamar cartón completo</button> : null}
+      {!game.game.lineClaimed && !game.player.eliminated ? <button className="button" disabled={!canClaimLine} onClick={onClaimLine} type="button">Reclamar línea vertical (4 canciones)</button> : null}
+      {!game.game.fullCardClaimed && !game.player.eliminated ? <button className="button" disabled={!canClaimFullCard} onClick={onClaimFullCard} type="button">¡Bingo!</button> : null}
       {error ? <p role="alert">{error}</p> : null}
     </>;
   }
