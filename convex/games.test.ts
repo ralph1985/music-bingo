@@ -111,6 +111,39 @@ describe("game storage", () => {
     ).rejects.toThrow("Player name");
   });
 
+  it("lets a player mark one of their own card songs before it is called", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 12 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+    await t.mutation(internal.games.createGame, { joinCode: "JOIN-1234", playlist });
+    const joined = await t.mutation(api.games.joinPlayer, {
+      joinCode: "JOIN-1234",
+      name: "Rafa",
+      playerIdentity: "player-identity-1",
+    });
+    const songId = joined.card.songs[0].id;
+
+    await t.mutation(api.games.markCell, {
+      joinCode: "JOIN-1234",
+      playerIdentity: "player-identity-1",
+      songId,
+    });
+    await t.mutation(api.games.markCell, {
+      joinCode: "JOIN-1234",
+      playerIdentity: "player-identity-1",
+      songId,
+    });
+
+    const game = await t.query(api.games.getPlayerGame, {
+      joinCode: "JOIN-1234",
+      playerIdentity: "player-identity-1",
+    });
+    expect(game?.player.markedSongIds).toEqual([songId]);
+  });
+
   it("returns only the player's card and redacted game state", async () => {
     const t = convexTest(schema, modules);
     const playlist = Array.from({ length: 13 }, (_, index) => ({

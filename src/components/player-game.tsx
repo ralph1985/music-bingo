@@ -26,6 +26,7 @@ function getStoredGame() {
 
 export default function PlayerGame({ joinCode }: PlayerGameProps) {
   const joinPlayer = useMutation(api.games.joinPlayer);
+  const markCell = useMutation(api.games.markCell);
   const savedGame = useSyncExternalStore(
     subscribeToLocalGame,
     getStoredGame,
@@ -78,6 +79,18 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
     }
   }
 
+  async function onMark(songId: string) {
+    if (!playerIdentity) {
+      return;
+    }
+
+    try {
+      await markCell({ joinCode, playerIdentity, songId });
+    } catch {
+      setError("No se pudo marcar esta canción.");
+    }
+  }
+
   if (playerIdentity && game === undefined) {
     return <section className="panel"><p>Recuperando tu cartón…</p></section>;
   }
@@ -89,10 +102,11 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
         <p>{game.game.calledSongCount} canciones anunciadas.</p>
       </section>
       <section className="card-grid" aria-label="Tu cartón musical">
-        {game.player.card.songs.map((song) => <article className="song-cell" key={song.id}>
+        {game.player.card.songs.map((song) => <button aria-pressed={game.player.markedSongIds.includes(song.id)} className="song-cell" key={song.id} onClick={() => onMark(song.id)} type="button">
           <strong>{song.title}</strong><span>{song.artist}</span>
-        </article>)}
+        </button>)}
       </section>
+      {error ? <p role="alert">{error}</p> : null}
     </>;
   }
 

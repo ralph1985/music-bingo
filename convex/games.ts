@@ -124,6 +124,43 @@ export const joinPlayer = mutation({
   },
 });
 
+export const markCell = mutation({
+  args: {
+    joinCode: v.string(),
+    playerIdentity: v.string(),
+    songId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_joinCode", (q) => q.eq("joinCode", args.joinCode))
+      .unique();
+
+    if (!game) {
+      throw new Error("Game not found.");
+    }
+
+    const player = await ctx.db
+      .query("players")
+      .withIndex("by_gameId_and_playerIdentity", (q) =>
+        q.eq("gameId", game._id).eq("playerIdentity", args.playerIdentity),
+      )
+      .unique();
+
+    if (!player || player.eliminated || !player.card.songs.some((song) => song.id === args.songId)) {
+      throw new Error("The selected card cell cannot be marked.");
+    }
+    if (player.markedSongIds.includes(args.songId)) {
+      return null;
+    }
+
+    await ctx.db.patch("players", player._id, {
+      markedSongIds: [...player.markedSongIds, args.songId],
+    });
+    return null;
+  },
+});
+
 export const getByCode = internalQuery({
   args: { joinCode: v.string() },
   handler: async (ctx, args) => {
