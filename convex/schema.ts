@@ -19,7 +19,7 @@ export default defineSchema({
       v.literal("playing"),
       v.literal("completed"),
     ),
-  }).index("by_joinCode", ["joinCode"]),
+  }).index("by_joinCode", ["joinCode"]).index("by_status", ["status"]),
   players: defineTable({
     card: v.object({
       cols: v.number(),

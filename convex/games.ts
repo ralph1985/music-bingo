@@ -38,6 +38,19 @@ export const createGame = internalMutation({
       return null;
     }
 
+    const waitingGame = await ctx.db
+      .query("games")
+      .withIndex("by_status", (q) => q.eq("status", "waiting"))
+      .first();
+    const playingGame = await ctx.db
+      .query("games")
+      .withIndex("by_status", (q) => q.eq("status", "playing"))
+      .first();
+
+    if (waitingGame || playingGame) {
+      return null;
+    }
+
     return await ctx.db.insert("games", {
       calledSongIds: [],
       fullCardWinnerPlayerId: null,
