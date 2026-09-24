@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 import { playerGameUrl } from "../server/games/player-game-url";
 import QrCode from "./qr-code";
@@ -16,6 +16,16 @@ export default function PlaylistImport() {
   const [pending, setPending] = useState(false);
   const [playlistText, setPlaylistText] = useState("");
   const playerUrl = createdGame ? playerGameUrl(window.location.origin, createdGame.joinCode) : null;
+
+  useEffect(() => {
+    void fetch("/api/admin/games")
+      .then(async (response) => response.ok ? await response.json() as { joinCode?: unknown } : null)
+      .then((game) => {
+        if (typeof game?.joinCode === "string") {
+          setCreatedGame({ joinCode: game.joinCode });
+        }
+      });
+  }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

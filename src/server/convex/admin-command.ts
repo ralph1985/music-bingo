@@ -92,6 +92,24 @@ export async function cancelGameCommand({
   }
 }
 
+export async function getActiveGameCommand({
+  cloudUrl,
+  fetcher = fetch,
+  secret,
+}: Pick<CreateGameCommandInput, "cloudUrl" | "fetcher" | "secret">): Promise<{ joinCode: string } | null> {
+  const response = await fetcher(`${deriveConvexSiteUrl(cloudUrl)}/admin/games`, {
+    method: "GET",
+    headers: { "x-admin-command-secret": secret },
+  });
+
+  if (!response.ok) {
+    throw new ConvexCommandError(response.status);
+  }
+
+  const body = await response.json() as { joinCode?: unknown };
+  return typeof body.joinCode === "string" ? { joinCode: body.joinCode } : null;
+}
+
 export function deriveConvexSiteUrl(cloudUrl: string): string {
   const url = new URL(cloudUrl);
 

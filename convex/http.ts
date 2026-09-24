@@ -74,6 +74,19 @@ http.route({
 });
 
 http.route({
+  path: "/admin/games",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    if (!isAuthorizedAdminCommand(request.headers.get("x-admin-command-secret"), env.ADMIN_COMMAND_SECRET)) {
+      return Response.json({ error: "No autorizado." }, { status: 401 });
+    }
+
+    const game = await ctx.runQuery(internal.games.getActiveGame, {});
+    return Response.json(game ? { joinCode: game.joinCode } : {});
+  }),
+});
+
+http.route({
   path: "/admin/calls",
   method: "POST",
   handler: httpAction(async (ctx, request) => {

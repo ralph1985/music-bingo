@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { ADMIN_SESSION_COOKIE, hasAdminSession } from "@/server/auth/admin-session";
-import { cancelGameCommand } from "@/server/convex/admin-command";
+import { cancelGameCommand, getActiveGameCommand } from "@/server/convex/admin-command";
 import { createAdminGame } from "@/server/games/create-admin-game";
 
 const MAX_PLAYLIST_LENGTH = 150_000;
@@ -63,6 +63,29 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "No se pudo cancelar la partida." }, { status: 422 });
+  }
+}
+
+export async function GET() {
+  const cookieStore = await cookies();
+  const authorized = hasAdminSession(
+    cookieStore.get(ADMIN_SESSION_COOKIE)?.value,
+    process.env.SESSION_SECRET,
+  );
+  const cloudUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+  const secret = process.env.ADMIN_COMMAND_SECRET;
+
+  if (!authorized) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  }
+  if (!cloudUrl || !secret) {
+    return NextResponse.json({ error: "La consulta de partidas no está configurada." }, { status: 503 });
+  }
+
+  try {
+    return NextResponse.json(await getActiveGameCommand({ cloudUrl, secret }));
+  } catch {
+    return NextResponse.json({ error: "No se pudo consultar la partida activa." }, { status: 422 });
   }
 }
 
