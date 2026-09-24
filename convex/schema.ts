@@ -18,6 +18,7 @@ export default defineSchema({
       v.literal("waiting"),
       v.literal("playing"),
       v.literal("completed"),
+      v.literal("cancelled"),
     ),
   }).index("by_joinCode", ["joinCode"]).index("by_status", ["status"]),
   players: defineTable({

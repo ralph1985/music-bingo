@@ -80,6 +80,29 @@ export default function PlaylistImport() {
     setCalledSongIds((current) => [...current, songId]);
   }
 
+  async function cancelGame() {
+    if (!createdGame) {
+      return;
+    }
+
+    setPending(true);
+    setError(null);
+    const response = await fetch("/api/admin/games", {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ joinCode: createdGame.joinCode }),
+    });
+    setPending(false);
+
+    if (!response.ok) {
+      setError("No se pudo cancelar la partida.");
+      return;
+    }
+
+    setCreatedGame(null);
+    setCalledSongIds([]);
+  }
+
   return <section className="panel">
     <p className="field-label">IMPORTAR CANCIONES</p>
     <p>Usa una canción por línea: <code>Título;Artista</code> o <code>Título - Artista</code>. También puedes pegar CSV.</p>
@@ -99,6 +122,7 @@ export default function PlaylistImport() {
       <p>Partida creada con código <strong>{createdGame.joinCode}</strong>.</p>
       <a className="button" href={playerUrl ?? `/play/${createdGame.joinCode}`}>Abrir enlace de jugadores</a>
       {playerUrl ? <QrCode url={playerUrl} /> : null}
+      <button className="button" disabled={pending} onClick={cancelGame} type="button">Cancelar partida</button>
       <p className="field-label" style={{ marginTop: 18 }}>ANUNCIAR CANCIÓN</p>
       {result?.songs.map((song, index) => {
         const songId = `song-${index + 1}`;

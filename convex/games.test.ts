@@ -55,6 +55,20 @@ describe("game storage", () => {
     expect(await t.query(internal.games.getByCode, { joinCode: "OTRA1" })).toBeNull();
   });
 
+  it("allows a new game after the active game is cancelled", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 12 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+
+    await t.mutation(internal.games.createGame, { joinCode: "FIESTA", playlist });
+    await t.mutation(internal.games.cancelGame, { joinCode: "FIESTA" });
+
+    await expect(t.mutation(internal.games.createGame, { joinCode: "OTRA1", playlist })).resolves.not.toBeNull();
+  });
+
   it("rejects a playlist that cannot generate a 3 by 4 card", async () => {
     const t = convexTest(schema, modules);
 

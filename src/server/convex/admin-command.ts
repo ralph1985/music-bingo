@@ -68,6 +68,26 @@ export async function callSongCommand({
   }
 }
 
+export async function cancelGameCommand({
+  cloudUrl,
+  fetcher = fetch,
+  joinCode,
+  secret,
+}: Omit<CreateGameCommandInput, "playlist">): Promise<void> {
+  const response = await fetcher(`${deriveConvexSiteUrl(cloudUrl)}/admin/games`, {
+    method: "DELETE",
+    headers: {
+      "content-type": "application/json",
+      "x-admin-command-secret": secret,
+    },
+    body: JSON.stringify({ joinCode }),
+  });
+
+  if (!response.ok) {
+    throw new ConvexCommandError(response.status);
+  }
+}
+
 export function deriveConvexSiteUrl(cloudUrl: string): string {
   const url = new URL(cloudUrl);
 

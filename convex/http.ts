@@ -43,6 +43,31 @@ http.route({
 });
 
 http.route({
+  path: "/admin/games",
+  method: "DELETE",
+  handler: httpAction(async (ctx, request) => {
+    if (!isAuthorizedAdminCommand(request.headers.get("x-admin-command-secret"), env.ADMIN_COMMAND_SECRET)) {
+      return Response.json({ error: "No autorizado." }, { status: 401 });
+    }
+
+    let body: unknown;
+
+    try {
+      body = await request.json();
+    } catch {
+      return Response.json({ error: "Solicitud inválida." }, { status: 400 });
+    }
+
+    if (typeof body !== "object" || body === null || typeof (body as { joinCode?: unknown }).joinCode !== "string") {
+      return Response.json({ error: "Solicitud inválida." }, { status: 400 });
+    }
+
+    await ctx.runMutation(internal.games.cancelGame, { joinCode: (body as { joinCode: string }).joinCode });
+    return Response.json({ ok: true });
+  }),
+});
+
+http.route({
   path: "/admin/calls",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
