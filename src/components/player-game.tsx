@@ -127,14 +127,14 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
     return <>
       <section className="panel">
         <p className="field-label">PARTIDA {game.game.status === "waiting" ? "EN ESPERA" : "EN CURSO"}</p>
-        <p>{game.game.calledSongCount} canciones anunciadas. La línea se completa en vertical (una columna). Puedes marcar y corregir tu cartón; se validará al reclamar.</p>
+        <p>{game.game.calledSongCount} canciones anunciadas. La línea se completa en vertical: 4 canciones de una columna. Puedes marcar y corregir tu cartón; se validará al reclamar.</p>
       </section>
       <section className="card-grid" aria-label="Tu cartón musical">
         {game.player.card.songs.map((song) => <button aria-pressed={game.player.markedSongIds.includes(song.id)} className="song-cell" key={song.id} onClick={() => onMark(song.id)} type="button">
           <strong>{song.title}</strong><span>{song.artist}</span>
         </button>)}
       </section>
-      {!game.game.lineClaimed && !game.player.eliminated ? <button className="button" onClick={onClaimLine} type="button">Reclamar línea vertical</button> : null}
+      {!game.game.lineClaimed && !game.player.eliminated ? <button className="button" onClick={onClaimLine} type="button">Reclamar línea vertical (4 canciones)</button> : null}
       {!game.game.fullCardClaimed && !game.player.eliminated ? <button className="button" onClick={onClaimFullCard} type="button">Reclamar cartón completo</button> : null}
       {error ? <p role="alert">{error}</p> : null}
     </>;

@@ -185,7 +185,7 @@ describe("game storage", () => {
       name: "Rafa",
       playerIdentity: "player-identity-1",
     });
-    const lineSongIds = [0, 4, 8].map((index) => joined.card.songs[index].id);
+    const lineSongIds = [0, 3, 6, 9].map((index) => joined.card.songs[index].id);
 
     for (const songId of lineSongIds) {
       await t.mutation(internal.games.callSong, { joinCode: "JOIN-1234", songId });
