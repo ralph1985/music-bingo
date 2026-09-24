@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
-    "secrets:admin": "node scripts/generate-admin-secrets.mjs"
+    "secrets:admin": "node scripts/generate-admin-secrets.mjs",
+    "secrets:admin-command": "node scripts/generate-admin-command-secret.mjs"
   },
   "dependencies": {
     "convex": "^1.46.0",
