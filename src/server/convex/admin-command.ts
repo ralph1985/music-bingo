@@ -112,6 +112,26 @@ export async function startGameCommand({
   }
 }
 
+export async function finishGameCommand({
+  cloudUrl,
+  fetcher = fetch,
+  joinCode,
+  secret,
+}: Omit<CreateGameCommandInput, "playlist">): Promise<void> {
+  const response = await fetcher(`${deriveConvexSiteUrl(cloudUrl)}/admin/games/finish`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-admin-command-secret": secret,
+    },
+    body: JSON.stringify({ joinCode }),
+  });
+
+  if (!response.ok) {
+    throw new ConvexCommandError(response.status);
+  }
+}
+
 export async function getActiveGameCommand({
   cloudUrl,
   fetcher = fetch,

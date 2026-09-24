@@ -81,13 +81,18 @@ http.route({
       return Response.json({ error: "No autorizado." }, { status: 401 });
     }
 
-    const activeGame = await ctx.runQuery(internal.games.getActiveAdminGame, {});
-    return Response.json(activeGame ? {
-      calledSongIds: activeGame.game.calledSongIds,
-      joinCode: activeGame.game.joinCode,
-      players: activeGame.players,
-      playlist: activeGame.game.playlist,
-      status: activeGame.game.status,
+    const joinCode = new URL(request.url).searchParams.get("joinCode");
+    const game = joinCode
+      ? await ctx.runQuery(internal.games.getAdminGameByCode, { joinCode })
+      : await ctx.runQuery(internal.games.getActiveAdminGame, {});
+    return Response.json(game ? {
+      calledSongIds: game.game.calledSongIds,
+      fullCardWinnerPlayerId: game.game.fullCardWinnerPlayerId,
+      joinCode: game.game.joinCode,
+      lineWinnerPlayerId: game.game.lineWinnerPlayerId,
+      players: game.players,
+      playlist: game.game.playlist,
+      status: game.game.status,
     } : {});
   }),
 });
@@ -106,6 +111,24 @@ http.route({
     }
 
     await ctx.runMutation(internal.games.startGame, { joinCode: body.joinCode });
+    return Response.json({ ok: true });
+  }),
+});
+
+http.route({
+  path: "/admin/games/finish",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    if (!isAuthorizedAdminCommand(request.headers.get("x-admin-command-secret"), env.ADMIN_COMMAND_SECRET)) {
+      return Response.json({ error: "No autorizado." }, { status: 401 });
+    }
+
+    const body = await request.json().catch(() => null) as { joinCode?: unknown } | null;
+    if (typeof body?.joinCode !== "string") {
+      return Response.json({ error: "Solicitud inválida." }, { status: 400 });
+    }
+
+    await ctx.runMutation(internal.games.finishGame, { joinCode: body.joinCode });
     return Response.json({ ok: true });
   }),
 });

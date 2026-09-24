@@ -69,6 +69,68 @@ describe("game storage", () => {
     await expect(t.mutation(internal.games.createGame, { joinCode: "OTRA1", playlist })).resolves.not.toBeNull();
   });
 
+  it("finishes an active game and preserves its result state", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+    await t.mutation(internal.games.createGame, { joinCode: "FINALIZA", playlist });
+
+    await t.mutation(internal.games.finishGame, { joinCode: "FINALIZA" });
+
+    await expect(t.query(internal.games.getByCode, { joinCode: "FINALIZA" })).resolves.toMatchObject({ status: "completed" });
+    await expect(t.mutation(internal.games.createGame, { joinCode: "OTRA1", playlist })).resolves.not.toBeNull();
+  });
+
+  it("blocks card changes and claims after the host finishes a game", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+    await t.mutation(internal.games.createGame, { joinCode: "CERRADA", playlist });
+    const player = await t.mutation(api.games.joinPlayer, {
+      joinCode: "CERRADA",
+      name: "Rafa",
+      playerIdentity: "finished-game-player",
+    });
+    await t.mutation(internal.games.finishGame, { joinCode: "CERRADA" });
+
+    await expect(t.mutation(api.games.markCell, {
+      joinCode: "CERRADA",
+      playerIdentity: "finished-game-player",
+      songId: player.card.songs[0].id,
+    })).rejects.toThrow("Game is not active.");
+    await expect(t.mutation(api.games.claimLine, {
+      joinCode: "CERRADA",
+      playerIdentity: "finished-game-player",
+    })).resolves.toEqual({ outcome: "unavailable" });
+  });
+
+  it("returns completed game details to the host by join code", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+    await t.mutation(internal.games.createGame, { joinCode: "RESULTAD", playlist });
+    await t.mutation(api.games.joinPlayer, {
+      joinCode: "RESULTAD",
+      name: "Rafa",
+      playerIdentity: "host-result-player",
+    });
+    await t.mutation(internal.games.finishGame, { joinCode: "RESULTAD" });
+
+    await expect(t.query(internal.games.getAdminGameByCode, { joinCode: "RESULTAD" })).resolves.toMatchObject({
+      game: { joinCode: "RESULTAD", status: "completed" },
+      players: [{ name: "Rafa" }],
+    });
+  });
+
   it("rejects a playlist with fewer than 24 songs", async () => {
     const t = convexTest(schema, modules);
 

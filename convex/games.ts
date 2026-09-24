@@ -126,6 +126,23 @@ export const cancelGame = internalMutation({
   },
 });
 
+export const finishGame = internalMutation({
+  args: { joinCode: v.string() },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_joinCode", (q) => q.eq("joinCode", args.joinCode))
+      .unique();
+
+    if (!game || game.status === "completed" || game.status === "cancelled") {
+      return null;
+    }
+
+    await ctx.db.patch("games", game._id, { status: "completed" });
+    return null;
+  },
+});
+
 export const getActiveGame = internalQuery({
   args: {},
   handler: async (ctx) => {
@@ -160,7 +177,26 @@ export const getActiveAdminGame = internalQuery({
       .query("players")
       .withIndex("by_gameId", (q) => q.eq("gameId", game._id))
       .collect();
-    return { game, players: players.map((player) => ({ name: player.name })) };
+    return { game, players: players.map((player) => ({ id: player._id, name: player.name })) };
+  },
+});
+
+export const getAdminGameByCode = internalQuery({
+  args: { joinCode: v.string() },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_joinCode", (q) => q.eq("joinCode", args.joinCode))
+      .unique();
+    if (!game) {
+      return null;
+    }
+
+    const players = await ctx.db
+      .query("players")
+      .withIndex("by_gameId", (q) => q.eq("gameId", game._id))
+      .collect();
+    return { game, players: players.map((player) => ({ id: player._id, name: player.name })) };
   },
 });
 
@@ -226,6 +262,9 @@ export const markCell = mutation({
     if (!game) {
       throw new Error("Game not found.");
     }
+    if (game.status === "completed" || game.status === "cancelled") {
+      throw new Error("Game is not active.");
+    }
 
     const player = await ctx.db
       .query("players")
@@ -267,8 +306,8 @@ export const claimLine = mutation({
       .withIndex("by_joinCode", (q) => q.eq("joinCode", args.joinCode))
       .unique();
 
-    if (!game || game.lineWinnerPlayerId) {
-      return null;
+    if (!game || game.status !== "playing" || game.lineWinnerPlayerId) {
+      return { outcome: "unavailable" };
     }
 
     const player = await ctx.db
@@ -302,8 +341,8 @@ export const claimFullCard = mutation({
       .withIndex("by_joinCode", (q) => q.eq("joinCode", args.joinCode))
       .unique();
 
-    if (!game || game.fullCardWinnerPlayerId) {
-      return null;
+    if (!game || game.status !== "playing" || game.fullCardWinnerPlayerId) {
+      return { outcome: "unavailable" };
     }
 
     const player = await ctx.db

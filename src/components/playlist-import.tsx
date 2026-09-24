@@ -7,6 +7,8 @@ import QrCode from "./qr-code";
 
 type Song = { title: string; artist: string };
 type ImportResult = { songs: Song[]; errors: { line: number; message: string }[] };
+type GameStatus = "waiting" | "playing" | "completed";
+type AdminPlayer = { id: string; name: string };
 
 function isSong(value: unknown): value is Song {
   return typeof value === "object" && value !== null
@@ -16,19 +18,23 @@ function isSong(value: unknown): value is Song {
 
 export default function PlaylistImport() {
   const [calledSongIds, setCalledSongIds] = useState<string[]>([]);
-  const [createdGame, setCreatedGame] = useState<{ joinCode: string; status: "waiting" | "playing" } | null>(null);
+  const [createdGame, setCreatedGame] = useState<{ joinCode: string; status: GameStatus } | null>(null);
+  const [fullCardWinnerPlayerId, setFullCardWinnerPlayerId] = useState<string | null>(null);
+  const [lineWinnerPlayerId, setLineWinnerPlayerId] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const [playerNames, setPlayerNames] = useState<string[]>([]);
+  const [players, setPlayers] = useState<AdminPlayer[]>([]);
   const [playlistText, setPlaylistText] = useState("");
+  const currentJoinCode = createdGame?.joinCode;
   const playerUrl = createdGame ? playerGameUrl(window.location.origin, createdGame.joinCode) : null;
 
   useEffect(() => {
-    const loadGame = () => fetch("/api/admin/games")
-      .then(async (response) => response.ok ? await response.json() as { calledSongIds?: unknown; joinCode?: unknown; players?: unknown; playlist?: unknown; status?: unknown } : null)
+    const url = currentJoinCode ? `/api/admin/games?joinCode=${encodeURIComponent(currentJoinCode)}` : "/api/admin/games";
+    const loadGame = () => fetch(url)
+      .then(async (response) => response.ok ? await response.json() as { calledSongIds?: unknown; fullCardWinnerPlayerId?: unknown; joinCode?: unknown; lineWinnerPlayerId?: unknown; players?: unknown; playlist?: unknown; status?: unknown } : null)
       .then((game) => {
-        if (typeof game?.joinCode === "string" && (game.status === "waiting" || game.status === "playing")) {
+        if (typeof game?.joinCode === "string" && (game.status === "waiting" || game.status === "playing" || game.status === "completed")) {
           setCreatedGame({ joinCode: game.joinCode, status: game.status });
           if (Array.isArray(game.playlist) && game.playlist.every(isSong)) {
             setResult({ errors: [], songs: game.playlist });
@@ -36,8 +42,10 @@ export default function PlaylistImport() {
           if (Array.isArray(game.calledSongIds) && game.calledSongIds.every((songId) => typeof songId === "string")) {
             setCalledSongIds(game.calledSongIds);
           }
+          setFullCardWinnerPlayerId(typeof game.fullCardWinnerPlayerId === "string" ? game.fullCardWinnerPlayerId : null);
+          setLineWinnerPlayerId(typeof game.lineWinnerPlayerId === "string" ? game.lineWinnerPlayerId : null);
           if (Array.isArray(game.players)) {
-            setPlayerNames(game.players.flatMap((player) => typeof player === "object" && player !== null && typeof (player as { name?: unknown }).name === "string" ? [(player as { name: string }).name] : []));
+            setPlayers(game.players.flatMap((player) => typeof player === "object" && player !== null && typeof (player as { id?: unknown; name?: unknown }).id === "string" && typeof (player as { id?: unknown; name?: unknown }).name === "string" ? [{ id: (player as { id: string }).id, name: (player as { name: string }).name }] : []));
           }
         }
       });
@@ -45,7 +53,7 @@ export default function PlaylistImport() {
     void loadGame();
     const interval = window.setInterval(() => void loadGame(), 3_000);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [currentJoinCode]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -149,6 +157,30 @@ export default function PlaylistImport() {
 
     setCreatedGame(null);
     setCalledSongIds([]);
+    setFullCardWinnerPlayerId(null);
+    setLineWinnerPlayerId(null);
+    setPlayers([]);
+  }
+
+  async function finishGame() {
+    if (!createdGame) return;
+    setPending(true);
+    setError(null);
+    const response = await fetch("/api/admin/games/finish", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ joinCode: createdGame.joinCode }),
+    });
+    setPending(false);
+    if (!response.ok) {
+      setError("No se pudo finalizar la partida.");
+      return;
+    }
+    setCreatedGame({ ...createdGame, status: "completed" });
+  }
+
+  function winnerName(playerId: string | null): string {
+    return players.find((player) => player.id === playerId)?.name ?? "Sin ganador";
   }
 
   return <section className="panel">
@@ -169,21 +201,23 @@ export default function PlaylistImport() {
     </div> : null}
     {createdGame ? <div className="import-result" role="status">
       <p>Partida creada con código <strong>{createdGame.joinCode}</strong>.</p>
-      <p>{createdGame.status === "waiting" ? "Inscripciones abiertas." : "Partida en curso: inscripciones cerradas."}</p>
-      <p>{playerNames.length} jugador{playerNames.length === 1 ? "" : "es"} en sala{playerNames.length ? `: ${playerNames.join(", ")}` : "."}</p>
+      <p>{createdGame.status === "waiting" ? "Inscripciones abiertas." : createdGame.status === "playing" ? "Partida en curso: inscripciones cerradas." : "Partida finalizada. Consulta los resultados abajo."}</p>
+      <p>{players.length} jugador{players.length === 1 ? "" : "es"} en sala{players.length ? `: ${players.map((player) => player.name).join(", ")}` : "."}</p>
       <a className="button" href={playerUrl ?? `/play/${createdGame.joinCode}`}>Abrir enlace de jugadores</a>
       {playerUrl ? <QrCode url={playerUrl} /> : null}
       {createdGame.status === "waiting" ? <button className="button" disabled={pending} onClick={startGame} type="button">Iniciar partida y cerrar inscripciones</button> : null}
-      <button className="button" disabled={pending} onClick={cancelGame} type="button">Cancelar partida</button>
-      <p className="field-label" style={{ marginTop: 18 }}>ANUNCIAR CANCIÓN</p>
-      {result?.songs.map((song, index) => {
+      {createdGame.status !== "completed" ? <button className="button" disabled={pending} onClick={finishGame} type="button">Finalizar partida y ver resultados</button> : null}
+      {createdGame.status !== "completed" ? <button className="button" disabled={pending} onClick={cancelGame} type="button">Cancelar partida</button> : null}
+      {createdGame.status === "completed" ? <section className="import-result"><p className="field-label">RESULTADOS</p><p>Línea: <strong>{winnerName(lineWinnerPlayerId)}</strong></p><p>¡Bingo!: <strong>{winnerName(fullCardWinnerPlayerId)}</strong></p><p>{calledSongIds.length} canciones anunciadas en total.</p></section> : null}
+      {createdGame.status !== "completed" ? <p className="field-label" style={{ marginTop: 18 }}>ANUNCIAR CANCIÓN</p> : null}
+      {createdGame.status !== "completed" ? result?.songs.map((song, index) => {
         const songId = `song-${index + 1}`;
         const called = calledSongIds.includes(songId);
 
         return <button className="button" disabled={pending || called} key={songId} onClick={() => callSong(songId)} type="button">
           {called ? `✓ Anunciada — ${song.title} — ${song.artist}` : `${song.title} — ${song.artist}`}
         </button>;
-      })}
+      }) : null}
     </div> : null}
   </section>;
 }

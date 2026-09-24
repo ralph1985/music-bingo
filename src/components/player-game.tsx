@@ -147,19 +147,21 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
     const cardSongIds = game.player.card.songs.map((song) => song.id);
     const canClaimLine = hasMarkedVerticalLine(game.player.markedSongIds, cardSongIds);
     const canClaimFullCard = cardSongIds.every((songId) => game.player.markedSongIds.includes(songId));
+    const gameFinished = game.game.status === "completed" || game.game.status === "cancelled";
+    const statusLabel = game.game.status === "waiting" ? "EN ESPERA" : game.game.status === "playing" ? "EN CURSO" : game.game.status === "completed" ? "FINALIZADA" : "CANCELADA";
 
     return <>
       <section className="panel">
-        <p className="field-label">PARTIDA {game.game.status === "waiting" ? "EN ESPERA" : "EN CURSO"}</p>
-        <p>{game.game.calledSongCount} canciones anunciadas. La línea se completa en vertical: 4 canciones de una columna. Puedes marcar y corregir tu cartón; se validará al reclamar.</p>
+        <p className="field-label">PARTIDA {statusLabel}</p>
+        <p>{gameFinished ? "La partida ha terminado. Gracias por jugar." : `${game.game.calledSongCount} canciones anunciadas. La línea se completa en vertical: 4 canciones de una columna. Puedes marcar y corregir tu cartón; se validará al reclamar.`}</p>
       </section>
       <section className="card-grid" aria-label="Tu cartón musical">
-        {game.player.card.songs.map((song) => <button aria-pressed={game.player.markedSongIds.includes(song.id)} className="song-cell" key={song.id} onClick={() => onMark(song.id)} type="button">
+        {game.player.card.songs.map((song) => <button aria-pressed={game.player.markedSongIds.includes(song.id)} className="song-cell" disabled={gameFinished} key={song.id} onClick={() => onMark(song.id)} type="button">
           <strong>{song.title}</strong><span>{song.artist}</span>
         </button>)}
       </section>
-      {!game.game.lineClaimed && !game.player.eliminated ? <button className="button" disabled={!canClaimLine} onClick={onClaimLine} type="button">Reclamar línea vertical (4 canciones)</button> : null}
-      {!game.game.fullCardClaimed && !game.player.eliminated ? <button className="button" disabled={!canClaimFullCard} onClick={onClaimFullCard} type="button">¡Bingo!</button> : null}
+      {!game.game.lineClaimed && !game.player.eliminated ? <button className="button" disabled={gameFinished || !canClaimLine} onClick={onClaimLine} type="button">Reclamar línea vertical (4 canciones)</button> : null}
+      {!game.game.fullCardClaimed && !game.player.eliminated ? <button className="button" disabled={gameFinished || !canClaimFullCard} onClick={onClaimFullCard} type="button">¡Bingo!</button> : null}
       {error ? <FeedbackModal message={error} onClose={() => setError(null)} /> : null}
     </>;
   }
