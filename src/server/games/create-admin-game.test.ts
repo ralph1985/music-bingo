@@ -4,7 +4,7 @@ import { createAdminGame } from "./create-admin-game";
 
 describe("createAdminGame", () => {
   const playlistText = Array.from(
-    { length: 12 },
+    { length: 24 },
     (_, index) => `Canción ${index + 1};Artista ${index + 1}`,
   ).join("\n");
 
@@ -34,6 +34,23 @@ describe("createAdminGame", () => {
       text: `${playlistText}\nInválida`,
       fetcher,
     })).rejects.toThrow("corrige las filas inválidas");
+
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it("requires at least 24 valid songs before calling Convex", async () => {
+    const fetcher = vi.fn();
+    const tooShortPlaylist = Array.from(
+      { length: 23 },
+      (_, index) => `Canción ${index + 1};Artista ${index + 1}`,
+    ).join("\n");
+
+    await expect(createAdminGame({
+      cloudUrl: "https://example.convex.cloud",
+      secret: "shared-test-secret",
+      text: tooShortPlaylist,
+      fetcher,
+    })).rejects.toThrow("al menos 24 canciones");
 
     expect(fetcher).not.toHaveBeenCalled();
   });

@@ -12,7 +12,7 @@ const modules = import.meta.glob("./**/*.ts");
 describe("game storage", () => {
   it("creates an admin game with its requested join code", async () => {
     const t = convexTest(schema, modules);
-    const playlist = Array.from({ length: 12 }, (_, index) => ({
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
       artist: `Artista ${index + 1}`,
       id: `song-${index + 1}`,
       title: `Canción ${index + 1}`,
@@ -29,7 +29,7 @@ describe("game storage", () => {
 
   it("reports a repeated join code without creating a second game", async () => {
     const t = convexTest(schema, modules);
-    const playlist = Array.from({ length: 12 }, (_, index) => ({
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
       artist: `Artista ${index + 1}`,
       id: `song-${index + 1}`,
       title: `Canción ${index + 1}`,
@@ -43,7 +43,7 @@ describe("game storage", () => {
 
   it("rejects creating a second active game", async () => {
     const t = convexTest(schema, modules);
-    const playlist = Array.from({ length: 12 }, (_, index) => ({
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
       artist: `Artista ${index + 1}`,
       id: `song-${index + 1}`,
       title: `Canción ${index + 1}`,
@@ -57,7 +57,7 @@ describe("game storage", () => {
 
   it("allows a new game after the active game is cancelled", async () => {
     const t = convexTest(schema, modules);
-    const playlist = Array.from({ length: 12 }, (_, index) => ({
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
       artist: `Artista ${index + 1}`,
       id: `song-${index + 1}`,
       title: `Canción ${index + 1}`,
@@ -69,24 +69,24 @@ describe("game storage", () => {
     await expect(t.mutation(internal.games.createGame, { joinCode: "OTRA1", playlist })).resolves.not.toBeNull();
   });
 
-  it("rejects a playlist that cannot generate a 3 by 4 card", async () => {
+  it("rejects a playlist with fewer than 24 songs", async () => {
     const t = convexTest(schema, modules);
 
     await expect(
       t.mutation(internal.games.createGame, {
         joinCode: "JOIN-1234",
-        playlist: Array.from({ length: 11 }, (_, index) => ({
+        playlist: Array.from({ length: 23 }, (_, index) => ({
           artist: `Artista ${index + 1}`,
           id: `song-${index + 1}`,
           title: `Canción ${index + 1}`,
         })),
       }),
-    ).rejects.toThrow("at least 12 songs");
+    ).rejects.toThrow("at least 24 songs");
   });
 
   it("rejects duplicate song identifiers", async () => {
     const t = convexTest(schema, modules);
-    const playlist = Array.from({ length: 12 }, (_, index) => ({
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
       artist: `Artista ${index + 1}`,
       id: `song-${index + 1}`,
       title: `Canción ${index + 1}`,
@@ -98,9 +98,27 @@ describe("game storage", () => {
     ).rejects.toThrow("unique identifiers");
   });
 
+  it("deals a 12-song card from a 24-song playlist", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+    await t.mutation(internal.games.createGame, { joinCode: "CARTON24", playlist });
+
+    const player = await t.mutation(api.games.joinPlayer, {
+      joinCode: "CARTON24",
+      name: "Rafa",
+      playerIdentity: "player-identity-card",
+    });
+
+    expect(player.card.songs).toHaveLength(12);
+  });
+
   it("returns the existing player card when the same identity joins again", async () => {
     const t = convexTest(schema, modules);
-    const playlist = Array.from({ length: 12 }, (_, index) => ({
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
       artist: `Artista ${index + 1}`,
       id: `song-${index + 1}`,
       title: `Canción ${index + 1}`,
@@ -123,7 +141,7 @@ describe("game storage", () => {
 
   it("rejects a blank player name", async () => {
     const t = convexTest(schema, modules);
-    const playlist = Array.from({ length: 12 }, (_, index) => ({
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
       artist: `Artista ${index + 1}`,
       id: `song-${index + 1}`,
       title: `Canción ${index + 1}`,
@@ -141,7 +159,7 @@ describe("game storage", () => {
 
   it("lets a player freely correct marks on their own card before claiming", async () => {
     const t = convexTest(schema, modules);
-    const playlist = Array.from({ length: 12 }, (_, index) => ({
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
       artist: `Artista ${index + 1}`,
       id: `song-${index + 1}`,
       title: `Canción ${index + 1}`,
@@ -174,7 +192,7 @@ describe("game storage", () => {
 
   it("accepts the first valid vertical line claim for called and marked card songs", async () => {
     const t = convexTest(schema, modules);
-    const playlist = Array.from({ length: 12 }, (_, index) => ({
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
       artist: `Artista ${index + 1}`,
       id: `song-${index + 1}`,
       title: `Canción ${index + 1}`,
@@ -203,7 +221,7 @@ describe("game storage", () => {
 
   it("completes the game for the first valid full-card claim", async () => {
     const t = convexTest(schema, modules);
-    const playlist = Array.from({ length: 12 }, (_, index) => ({
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
       artist: `Artista ${index + 1}`,
       id: `song-${index + 1}`,
       title: `Canción ${index + 1}`,
@@ -231,7 +249,7 @@ describe("game storage", () => {
 
   it("returns only the player's card and redacted game state", async () => {
     const t = convexTest(schema, modules);
-    const playlist = Array.from({ length: 13 }, (_, index) => ({
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
       artist: `Artista ${index + 1}`,
       id: `song-${index + 1}`,
       title: `Canción ${index + 1}`,
@@ -261,7 +279,7 @@ describe("game storage", () => {
 
   it("closes new joins when the host starts the round before any song is called", async () => {
     const t = convexTest(schema, modules);
-    const playlist = Array.from({ length: 12 }, (_, index) => ({ artist: `Artista ${index}`, id: `song-${index}`, title: `Canción ${index}` }));
+    const playlist = Array.from({ length: 24 }, (_, index) => ({ artist: `Artista ${index}`, id: `song-${index}`, title: `Canción ${index}` }));
     await t.mutation(internal.games.createGame, { joinCode: "EMPEZAR", playlist });
     await t.mutation(internal.games.startGame, { joinCode: "EMPEZAR" });
 

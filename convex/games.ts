@@ -3,7 +3,8 @@ import { internalMutation, internalQuery, mutation, query } from "./_generated/s
 import { v } from "convex/values";
 
 const MAX_PLAYLIST_SONGS = 75;
-const MIN_PLAYLIST_SONGS = 12;
+const MIN_PLAYLIST_SONGS = 24;
+const CARD_SONGS = 12;
 
 type StoredSong = { artist: string; id: string; title: string };
 type StoredCard = { cols: number; rows: number; songs: StoredSong[] };
@@ -393,7 +394,7 @@ function generateCard(playlist: StoredSong[], seed: string): StoredCard {
     [songs[index], songs[swapIndex]] = [songs[swapIndex], songs[index]];
   }
 
-  return { cols: 4, rows: 3, songs: songs.slice(0, MIN_PLAYLIST_SONGS) };
+  return { cols: 3, rows: 4, songs: songs.slice(0, CARD_SONGS) };
 }
 
 function createSeededRandom(seed: string): () => number {

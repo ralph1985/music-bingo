@@ -4,7 +4,7 @@ import { prepareGamePlaylist } from "./game-playlist";
 import { generateJoinCode } from "./join-code";
 
 const MAX_CREATE_ATTEMPTS = 8;
-const MIN_PLAYLIST_SONGS = 12;
+const MIN_PLAYLIST_SONGS = 24;
 
 type CreateAdminGameInput = {
   cloudUrl: string;

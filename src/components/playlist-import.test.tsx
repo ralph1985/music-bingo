@@ -9,5 +9,7 @@ describe("PlaylistImport", () => {
 
     expect(markup).toContain("Previsualizar lista");
     expect(markup).not.toContain("Crear partida");
+    expect(markup).toContain("Mínimo: 24 canciones");
+    expect(markup).toContain("Recomendamos entre 30 y 45 canciones");
   });
 });
