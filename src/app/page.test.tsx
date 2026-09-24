@@ -10,6 +10,6 @@ describe("Home", () => {
     expect(page).toContain("Organizar partida");
     expect(page).toContain('href="/admin"');
     expect(page).toContain("Entrar a jugar");
-    expect(page).toContain('href="/play/demo"');
+    expect(page).toContain('href="/play"');
   });
 });

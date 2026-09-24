@@ -17,7 +17,7 @@ export default function Home() {
           <span>Crear la sesión, cargar canciones y lanzar cada tema.</span>
           <span className="entry-arrow">→</span>
         </Link>
-        <Link className="entry-card player-entry" href="/play/demo">
+        <Link className="entry-card player-entry" href="/play">
           <span className="entry-icon">♬</span>
           <span className="entry-label">TENGO UN CÓDIGO</span>
           <strong>Entrar a jugar</strong>
@@ -25,7 +25,7 @@ export default function Home() {
           <span className="entry-arrow">→</span>
         </Link>
       </section>
-      <p className="preview-note">Vista de avance · La partida real estará disponible en próximos cortes.</p>
+      <p className="preview-note">Abre una partida o entra con el código que te comparta la organización.</p>
     </main>
   );
 }
