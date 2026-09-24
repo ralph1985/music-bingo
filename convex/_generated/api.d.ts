@@ -8,7 +8,9 @@
  * @module
  */
 
+import type * as admin_command from "../admin_command.js";
 import type * as games from "../games.js";
+import type * as http from "../http.js";
 
 import type {
   ApiFromModules,
@@ -17,7 +19,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  admin_command: typeof admin_command;
   games: typeof games;
+  http: typeof http;
 }>;
 
 /**

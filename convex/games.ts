@@ -13,7 +13,7 @@ const songValidator = v.object({
   title: v.string(),
 });
 
-export const createDemoGame = internalMutation({
+export const createGame = internalMutation({
   args: {
     joinCode: v.string(),
     playlist: v.array(songValidator),
@@ -23,7 +23,7 @@ export const createDemoGame = internalMutation({
       throw new Error(`A game requires at least ${MIN_PLAYLIST_SONGS} songs.`);
     }
     if (args.playlist.length > MAX_PLAYLIST_SONGS) {
-      throw new Error(`A demo game can contain at most ${MAX_PLAYLIST_SONGS} songs.`);
+      throw new Error(`A game can contain at most ${MAX_PLAYLIST_SONGS} songs.`);
     }
     if (new Set(args.playlist.map((song) => song.id)).size !== args.playlist.length) {
       throw new Error("A game playlist requires unique identifiers.");
@@ -35,7 +35,7 @@ export const createDemoGame = internalMutation({
       .unique();
 
     if (existingGame) {
-      throw new Error("A game already exists for this join code.");
+      return null;
     }
 
     return await ctx.db.insert("games", {
