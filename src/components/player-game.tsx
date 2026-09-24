@@ -10,6 +10,19 @@ type PlayerGameProps = {
   joinCode: string;
 };
 
+function FeedbackModal({ message, onClose }: { message: string; onClose: () => void }) {
+  const won = message.startsWith("¡");
+
+  return <div aria-labelledby="feedback-title" className="modal-backdrop" role="dialog" aria-modal="true">
+    <section className="modal-card">
+      <p className="field-label">RESULTADO DE LA JUGADA</p>
+      <h2 id="feedback-title">{won ? "¡Enhorabuena!" : "Revisa tu cartón"}</h2>
+      <p>{message}</p>
+      <button autoFocus className="button" onClick={onClose} type="button">Continuar jugando</button>
+    </section>
+  </div>;
+}
+
 let cachedStoredGame: ReturnType<typeof loadLocalGame> | undefined;
 
 function hasMarkedVerticalLine(markedSongIds: string[], cardSongIds: string[]): boolean {
@@ -147,7 +160,7 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
       </section>
       {!game.game.lineClaimed && !game.player.eliminated ? <button className="button" disabled={!canClaimLine} onClick={onClaimLine} type="button">Reclamar línea vertical (4 canciones)</button> : null}
       {!game.game.fullCardClaimed && !game.player.eliminated ? <button className="button" disabled={!canClaimFullCard} onClick={onClaimFullCard} type="button">¡Bingo!</button> : null}
-      {error ? <p role="alert">{error}</p> : null}
+      {error ? <FeedbackModal message={error} onClose={() => setError(null)} /> : null}
     </>;
   }
 
@@ -168,6 +181,6 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
         {joining ? "Entrando…" : "Entrar a jugar"}
       </button>
     </form>
-    {error ? <p role="alert">{error}</p> : null}
+    {error ? <FeedbackModal message={error} onClose={() => setError(null)} /> : null}
   </section>;
 }

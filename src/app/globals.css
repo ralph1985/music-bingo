@@ -71,6 +71,10 @@ a {
 .song-cell[aria-pressed="true"]::after { content: "✓ MARCADA"; color: var(--lime); font-size: .65rem; font-weight: 800; letter-spacing: .08em; }
 .song-cell:focus-visible { outline: 3px solid var(--lime); outline-offset: 3px; }
 .song-cell strong { font-size: .86rem; line-height: 1.1; }.song-cell span { color: var(--muted); font-size: .7rem; }
+.modal-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: end center; padding: 20px; background: #09050ddd; backdrop-filter: blur(12px); }
+.modal-card { width: min(100%, 520px); padding: 26px; border: 1px solid #c6ff4388; border-radius: 26px; background: linear-gradient(145deg, #33204f, #181020); box-shadow: 0 -18px 80px #0009, 0 0 42px #c6ff4324; animation: modal-rise .2s ease-out; }
+.modal-card h2 { margin-bottom: 10px; font-size: 2rem; letter-spacing: -.05em; }.modal-card p:not(.field-label) { color: #e8dfef; line-height: 1.5; }
+@keyframes modal-rise { from { opacity: 0; transform: translateY(24px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 .site-footer { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 18px 20px 26px; color: var(--muted); font-size: .7rem; }
 .site-footer a { display: inline-flex; border-radius: 4px; outline-offset: 4px; }
 .site-footer a:focus-visible { outline: 2px solid var(--lime); }
