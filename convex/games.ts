@@ -414,8 +414,8 @@ function createSeededRandom(seed: string): () => number {
 }
 
 function hasValidLine(card: StoredCard, markedSongIds: string[], calledSongIds: string[]): boolean {
-  for (let row = 0; row < card.rows; row += 1) {
-    const songs = card.songs.slice(row * card.cols, (row + 1) * card.cols);
+  for (let column = 0; column < card.cols; column += 1) {
+    const songs = Array.from({ length: card.rows }, (_, row) => card.songs[row * card.cols + column]);
 
     if (songs.every((song) => markedSongIds.includes(song.id) && calledSongIds.includes(song.id))) {
       return true;

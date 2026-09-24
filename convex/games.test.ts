@@ -172,7 +172,7 @@ describe("game storage", () => {
     expect(game?.player.markedSongIds).toEqual([]);
   });
 
-  it("accepts the first valid line claim for called and marked card songs", async () => {
+  it("accepts the first valid vertical line claim for called and marked card songs", async () => {
     const t = convexTest(schema, modules);
     const playlist = Array.from({ length: 12 }, (_, index) => ({
       artist: `Artista ${index + 1}`,
@@ -185,7 +185,7 @@ describe("game storage", () => {
       name: "Rafa",
       playerIdentity: "player-identity-1",
     });
-    const lineSongIds = joined.card.songs.slice(0, 4).map((song) => song.id);
+    const lineSongIds = [0, 4, 8].map((index) => joined.card.songs[index].id);
 
     for (const songId of lineSongIds) {
       await t.mutation(internal.games.callSong, { joinCode: "JOIN-1234", songId });
