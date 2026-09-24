@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
 const MAX_PLAYLIST_SONGS = 75;
@@ -9,7 +9,7 @@ const songValidator = v.object({
   title: v.string(),
 });
 
-export const createDemoGame = mutation({
+export const createDemoGame = internalMutation({
   args: {
     joinCode: v.string(),
     playlist: v.array(songValidator),
@@ -39,7 +39,7 @@ export const createDemoGame = mutation({
   },
 });
 
-export const callSong = mutation({
+export const callSong = internalMutation({
   args: {
     joinCode: v.string(),
     songId: v.string(),
@@ -67,7 +67,7 @@ export const callSong = mutation({
   },
 });
 
-export const getByCode = query({
+export const getByCode = internalQuery({
   args: { joinCode: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db
