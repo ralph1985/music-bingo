@@ -139,7 +139,7 @@ describe("game storage", () => {
     ).rejects.toThrow("Player name");
   });
 
-  it("lets a player mark one of their own card songs before it is called", async () => {
+  it("only lets a player mark one of their own card songs after it is called", async () => {
     const t = convexTest(schema, modules);
     const playlist = Array.from({ length: 12 }, (_, index) => ({
       artist: `Artista ${index + 1}`,
@@ -154,11 +154,12 @@ describe("game storage", () => {
     });
     const songId = joined.card.songs[0].id;
 
-    await t.mutation(api.games.markCell, {
+    await expect(t.mutation(api.games.markCell, {
       joinCode: "JOIN-1234",
       playerIdentity: "player-identity-1",
       songId,
-    });
+    })).rejects.toThrow("cannot be marked");
+    await t.mutation(internal.games.callSong, { joinCode: "JOIN-1234", songId });
     await t.mutation(api.games.markCell, {
       joinCode: "JOIN-1234",
       playerIdentity: "player-identity-1",
@@ -188,8 +189,8 @@ describe("game storage", () => {
     const lineSongIds = joined.card.songs.slice(0, 4).map((song) => song.id);
 
     for (const songId of lineSongIds) {
-      await t.mutation(api.games.markCell, { joinCode: "JOIN-1234", playerIdentity: "player-identity-1", songId });
       await t.mutation(internal.games.callSong, { joinCode: "JOIN-1234", songId });
+      await t.mutation(api.games.markCell, { joinCode: "JOIN-1234", playerIdentity: "player-identity-1", songId });
     }
 
     await t.mutation(api.games.claimLine, { joinCode: "JOIN-1234", playerIdentity: "player-identity-1" });
@@ -216,8 +217,8 @@ describe("game storage", () => {
     });
 
     for (const song of joined.card.songs) {
-      await t.mutation(api.games.markCell, { joinCode: "JOIN-1234", playerIdentity: "player-identity-1", songId: song.id });
       await t.mutation(internal.games.callSong, { joinCode: "JOIN-1234", songId: song.id });
+      await t.mutation(api.games.markCell, { joinCode: "JOIN-1234", playerIdentity: "player-identity-1", songId: song.id });
     }
 
     await t.mutation(api.games.claimFullCard, { joinCode: "JOIN-1234", playerIdentity: "player-identity-1" });

@@ -192,7 +192,12 @@ export const markCell = mutation({
       )
       .unique();
 
-    if (!player || player.eliminated || !player.card.songs.some((song) => song.id === args.songId)) {
+    if (
+      !player
+      || player.eliminated
+      || !player.card.songs.some((song) => song.id === args.songId)
+      || !game.calledSongIds.includes(args.songId)
+    ) {
       throw new Error("The selected card cell cannot be marked.");
     }
     if (player.markedSongIds.includes(args.songId)) {
@@ -320,6 +325,9 @@ export const getPlayerGame = query({
     return {
       game: {
         calledSongCount: game.calledSongIds.length,
+        calledCardSongIds: player.card.songs
+          .map((song) => song.id)
+          .filter((songId) => game.calledSongIds.includes(songId)),
         fullCardClaimed: Boolean(game.fullCardWinnerPlayerId),
         lineClaimed: Boolean(game.lineWinnerPlayerId),
         status: game.status,
