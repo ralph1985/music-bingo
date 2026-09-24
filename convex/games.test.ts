@@ -131,6 +131,52 @@ describe("game storage", () => {
     });
   });
 
+  it("runs a complete round across two independently joined players", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+    await t.mutation(internal.games.createGame, { joinCode: "DOSJUG", playlist });
+    const firstPlayer = await t.mutation(api.games.joinPlayer, {
+      joinCode: "DOSJUG",
+      name: "Línea",
+      playerIdentity: "line-player",
+    });
+    const secondPlayer = await t.mutation(api.games.joinPlayer, {
+      joinCode: "DOSJUG",
+      name: "Bingo",
+      playerIdentity: "bingo-player",
+    });
+    await t.mutation(internal.games.startGame, { joinCode: "DOSJUG" });
+
+    const lineSongIds = [0, 3, 6, 9].map((index) => firstPlayer.card.songs[index].id);
+    for (const songId of new Set([...lineSongIds, ...secondPlayer.card.songs.map((song) => song.id)])) {
+      await t.mutation(internal.games.callSong, { joinCode: "DOSJUG", songId });
+    }
+    for (const songId of lineSongIds) {
+      await t.mutation(api.games.markCell, { joinCode: "DOSJUG", playerIdentity: "line-player", songId });
+    }
+    await expect(t.mutation(api.games.claimLine, {
+      joinCode: "DOSJUG",
+      playerIdentity: "line-player",
+    })).resolves.toEqual({ outcome: "won" });
+
+    for (const song of secondPlayer.card.songs) {
+      await t.mutation(api.games.markCell, { joinCode: "DOSJUG", playerIdentity: "bingo-player", songId: song.id });
+    }
+    await expect(t.mutation(api.games.claimFullCard, {
+      joinCode: "DOSJUG",
+      playerIdentity: "bingo-player",
+    })).resolves.toEqual({ outcome: "won" });
+
+    await expect(t.query(internal.games.getAdminGameByCode, { joinCode: "DOSJUG" })).resolves.toMatchObject({
+      game: { status: "completed" },
+      players: [{ name: "Línea" }, { name: "Bingo" }],
+    });
+  });
+
   it("rejects a playlist with fewer than 24 songs", async () => {
     const t = convexTest(schema, modules);
 
