@@ -161,6 +161,42 @@ export const markCell = mutation({
   },
 });
 
+export const claimLine = mutation({
+  args: {
+    joinCode: v.string(),
+    playerIdentity: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_joinCode", (q) => q.eq("joinCode", args.joinCode))
+      .unique();
+
+    if (!game || game.lineWinnerPlayerId) {
+      return null;
+    }
+
+    const player = await ctx.db
+      .query("players")
+      .withIndex("by_gameId_and_playerIdentity", (q) =>
+        q.eq("gameId", game._id).eq("playerIdentity", args.playerIdentity),
+      )
+      .unique();
+
+    if (!player || player.eliminated) {
+      return null;
+    }
+
+    if (!hasValidLine(player.card, player.markedSongIds, game.calledSongIds)) {
+      await ctx.db.patch("players", player._id, { eliminated: true });
+      return null;
+    }
+
+    await ctx.db.patch("games", game._id, { lineWinnerPlayerId: player._id });
+    return null;
+  },
+});
+
 export const getByCode = internalQuery({
   args: { joinCode: v.string() },
   handler: async (ctx, args) => {
@@ -241,4 +277,16 @@ function createSeededRandom(seed: string): () => number {
     value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
     return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+function hasValidLine(card: StoredCard, markedSongIds: string[], calledSongIds: string[]): boolean {
+  for (let row = 0; row < card.rows; row += 1) {
+    const songs = card.songs.slice(row * card.cols, (row + 1) * card.cols);
+
+    if (songs.every((song) => markedSongIds.includes(song.id) && calledSongIds.includes(song.id))) {
+      return true;
+    }
+  }
+
+  return false;
 }

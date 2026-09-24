@@ -26,6 +26,7 @@ function getStoredGame() {
 
 export default function PlayerGame({ joinCode }: PlayerGameProps) {
   const joinPlayer = useMutation(api.games.joinPlayer);
+  const claimLine = useMutation(api.games.claimLine);
   const markCell = useMutation(api.games.markCell);
   const savedGame = useSyncExternalStore(
     subscribeToLocalGame,
@@ -91,6 +92,18 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
     }
   }
 
+  async function onClaimLine() {
+    if (!playerIdentity) {
+      return;
+    }
+
+    try {
+      await claimLine({ joinCode, playerIdentity });
+    } catch {
+      setError("No se pudo comprobar la línea.");
+    }
+  }
+
   if (playerIdentity && game === undefined) {
     return <section className="panel"><p>Recuperando tu cartón…</p></section>;
   }
@@ -106,6 +119,7 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
           <strong>{song.title}</strong><span>{song.artist}</span>
         </button>)}
       </section>
+      {!game.game.lineClaimed && !game.player.eliminated ? <button className="button" onClick={onClaimLine} type="button">Reclamar línea</button> : null}
       {error ? <p role="alert">{error}</p> : null}
     </>;
   }

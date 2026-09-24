@@ -144,6 +144,35 @@ describe("game storage", () => {
     expect(game?.player.markedSongIds).toEqual([songId]);
   });
 
+  it("accepts the first valid line claim for called and marked card songs", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 12 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+    await t.mutation(internal.games.createGame, { joinCode: "JOIN-1234", playlist });
+    const joined = await t.mutation(api.games.joinPlayer, {
+      joinCode: "JOIN-1234",
+      name: "Rafa",
+      playerIdentity: "player-identity-1",
+    });
+    const lineSongIds = joined.card.songs.slice(0, 4).map((song) => song.id);
+
+    for (const songId of lineSongIds) {
+      await t.mutation(api.games.markCell, { joinCode: "JOIN-1234", playerIdentity: "player-identity-1", songId });
+      await t.mutation(internal.games.callSong, { joinCode: "JOIN-1234", songId });
+    }
+
+    await t.mutation(api.games.claimLine, { joinCode: "JOIN-1234", playerIdentity: "player-identity-1" });
+    const game = await t.query(api.games.getPlayerGame, {
+      joinCode: "JOIN-1234",
+      playerIdentity: "player-identity-1",
+    });
+    expect(game?.game.lineClaimed).toBe(true);
+    expect(game?.player.eliminated).toBe(false);
+  });
+
   it("returns only the player's card and redacted game state", async () => {
     const t = convexTest(schema, modules);
     const playlist = Array.from({ length: 13 }, (_, index) => ({
