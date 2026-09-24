@@ -180,7 +180,7 @@ export default function PlaylistImport() {
         const called = calledSongIds.includes(songId);
 
         return <button className="button" disabled={pending || called} key={songId} onClick={() => callSong(songId)} type="button">
-          {called ? "Anunciada" : `${song.title} — ${song.artist}`}
+          {called ? `✓ Anunciada — ${song.title} — ${song.artist}` : `${song.title} — ${song.artist}`}
         </button>;
       })}
     </div> : null}
