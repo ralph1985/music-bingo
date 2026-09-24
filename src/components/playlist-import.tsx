@@ -25,7 +25,7 @@ export default function PlaylistImport() {
   const playerUrl = createdGame ? playerGameUrl(window.location.origin, createdGame.joinCode) : null;
 
   useEffect(() => {
-    void fetch("/api/admin/games")
+    const loadGame = () => fetch("/api/admin/games")
       .then(async (response) => response.ok ? await response.json() as { calledSongIds?: unknown; joinCode?: unknown; players?: unknown; playlist?: unknown; status?: unknown } : null)
       .then((game) => {
         if (typeof game?.joinCode === "string" && (game.status === "waiting" || game.status === "playing")) {
@@ -41,6 +41,10 @@ export default function PlaylistImport() {
           }
         }
       });
+
+    void loadGame();
+    const interval = window.setInterval(() => void loadGame(), 3_000);
+    return () => window.clearInterval(interval);
   }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
