@@ -99,7 +99,8 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
     }
 
     try {
-      await claimLine({ joinCode, playerIdentity });
+      const result = await claimLine({ joinCode, playerIdentity });
+      setError(result?.outcome === "won" ? "¡Línea válida!" : "Línea inválida: revisa las canciones que ya han sonado.");
     } catch {
       setError("No se pudo comprobar la línea.");
     }
@@ -111,7 +112,8 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
     }
 
     try {
-      await claimFullCard({ joinCode, playerIdentity });
+      const result = await claimFullCard({ joinCode, playerIdentity });
+      setError(result?.outcome === "won" ? "¡Bingo válido!" : "Bingo inválido: revisa las canciones que ya han sonado.");
     } catch {
       setError("No se pudo comprobar el cartón.");
     }

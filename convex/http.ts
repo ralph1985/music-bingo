@@ -81,12 +81,13 @@ http.route({
       return Response.json({ error: "No autorizado." }, { status: 401 });
     }
 
-    const game = await ctx.runQuery(internal.games.getActiveGame, {});
-    return Response.json(game ? {
-      calledSongIds: game.calledSongIds,
-      joinCode: game.joinCode,
-      playlist: game.playlist,
-      status: game.status,
+    const activeGame = await ctx.runQuery(internal.games.getActiveAdminGame, {});
+    return Response.json(activeGame ? {
+      calledSongIds: activeGame.game.calledSongIds,
+      joinCode: activeGame.game.joinCode,
+      players: activeGame.players,
+      playlist: activeGame.game.playlist,
+      status: activeGame.game.status,
     } : {});
   }),
 });

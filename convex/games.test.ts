@@ -192,7 +192,7 @@ describe("game storage", () => {
       await t.mutation(api.games.markCell, { joinCode: "JOIN-1234", playerIdentity: "player-identity-1", songId });
     }
 
-    await t.mutation(api.games.claimLine, { joinCode: "JOIN-1234", playerIdentity: "player-identity-1" });
+    await expect(t.mutation(api.games.claimLine, { joinCode: "JOIN-1234", playerIdentity: "player-identity-1" })).resolves.toEqual({ outcome: "won" });
     const game = await t.query(api.games.getPlayerGame, {
       joinCode: "JOIN-1234",
       playerIdentity: "player-identity-1",
@@ -220,7 +220,7 @@ describe("game storage", () => {
       await t.mutation(api.games.markCell, { joinCode: "JOIN-1234", playerIdentity: "player-identity-1", songId: song.id });
     }
 
-    await t.mutation(api.games.claimFullCard, { joinCode: "JOIN-1234", playerIdentity: "player-identity-1" });
+    await expect(t.mutation(api.games.claimFullCard, { joinCode: "JOIN-1234", playerIdentity: "player-identity-1" })).resolves.toEqual({ outcome: "won" });
     const game = await t.query(api.games.getPlayerGame, {
       joinCode: "JOIN-1234",
       playerIdentity: "player-identity-1",

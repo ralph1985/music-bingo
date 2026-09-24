@@ -1,4 +1,5 @@
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
+
 import { v } from "convex/values";
 
 const MAX_PLAYLIST_SONGS = 75;
@@ -139,6 +140,29 @@ export const getActiveGame = internalQuery({
   },
 });
 
+export const getActiveAdminGame = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const waitingGame = await ctx.db
+      .query("games")
+      .withIndex("by_status", (q) => q.eq("status", "waiting"))
+      .first();
+    const game = waitingGame ?? await ctx.db
+      .query("games")
+      .withIndex("by_status", (q) => q.eq("status", "playing"))
+      .first();
+    if (!game) {
+      return null;
+    }
+
+    const players = await ctx.db
+      .query("players")
+      .withIndex("by_gameId", (q) => q.eq("gameId", game._id))
+      .collect();
+    return { game, players: players.map((player) => ({ name: player.name })) };
+  },
+});
+
 export const joinPlayer = mutation({
   args: {
     joinCode: v.string(),
@@ -254,15 +278,15 @@ export const claimLine = mutation({
       .unique();
 
     if (!player || player.eliminated) {
-      return null;
+      return { outcome: "unavailable" };
     }
 
     if (!hasValidLine(player.card, player.markedSongIds, game.calledSongIds)) {
-      return null;
+      return { outcome: "invalid" };
     }
 
     await ctx.db.patch("games", game._id, { lineWinnerPlayerId: player._id });
-    return null;
+    return { outcome: "won" };
   },
 });
 
@@ -289,18 +313,18 @@ export const claimFullCard = mutation({
       .unique();
 
     if (!player || player.eliminated) {
-      return null;
+      return { outcome: "unavailable" };
     }
 
     if (!player.card.songs.every((song) => player.markedSongIds.includes(song.id) && game.calledSongIds.includes(song.id))) {
-      return null;
+      return { outcome: "invalid" };
     }
 
     await ctx.db.patch("games", game._id, {
       fullCardWinnerPlayerId: player._id,
       status: "completed",
     });
-    return null;
+    return { outcome: "won" };
   },
 });
 

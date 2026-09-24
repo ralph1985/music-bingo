@@ -20,12 +20,13 @@ export default function PlaylistImport() {
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [playerNames, setPlayerNames] = useState<string[]>([]);
   const [playlistText, setPlaylistText] = useState("");
   const playerUrl = createdGame ? playerGameUrl(window.location.origin, createdGame.joinCode) : null;
 
   useEffect(() => {
     void fetch("/api/admin/games")
-      .then(async (response) => response.ok ? await response.json() as { calledSongIds?: unknown; joinCode?: unknown; playlist?: unknown; status?: unknown } : null)
+      .then(async (response) => response.ok ? await response.json() as { calledSongIds?: unknown; joinCode?: unknown; players?: unknown; playlist?: unknown; status?: unknown } : null)
       .then((game) => {
         if (typeof game?.joinCode === "string" && (game.status === "waiting" || game.status === "playing")) {
           setCreatedGame({ joinCode: game.joinCode, status: game.status });
@@ -34,6 +35,9 @@ export default function PlaylistImport() {
           }
           if (Array.isArray(game.calledSongIds) && game.calledSongIds.every((songId) => typeof songId === "string")) {
             setCalledSongIds(game.calledSongIds);
+          }
+          if (Array.isArray(game.players)) {
+            setPlayerNames(game.players.flatMap((player) => typeof player === "object" && player !== null && typeof (player as { name?: unknown }).name === "string" ? [(player as { name: string }).name] : []));
           }
         }
       });
@@ -161,6 +165,7 @@ export default function PlaylistImport() {
     {createdGame ? <div className="import-result" role="status">
       <p>Partida creada con código <strong>{createdGame.joinCode}</strong>.</p>
       <p>{createdGame.status === "waiting" ? "Inscripciones abiertas." : "Partida en curso: inscripciones cerradas."}</p>
+      <p>{playerNames.length} jugador{playerNames.length === 1 ? "" : "es"} en sala{playerNames.length ? `: ${playerNames.join(", ")}` : "."}</p>
       <a className="button" href={playerUrl ?? `/play/${createdGame.joinCode}`}>Abrir enlace de jugadores</a>
       {playerUrl ? <QrCode url={playerUrl} /> : null}
       {createdGame.status === "waiting" ? <button className="button" disabled={pending} onClick={startGame} type="button">Iniciar partida y cerrar inscripciones</button> : null}

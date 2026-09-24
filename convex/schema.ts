@@ -32,5 +32,5 @@ export default defineSchema({
     markedSongIds: v.array(v.string()),
     name: v.string(),
     playerIdentity: v.string(),
-  }).index("by_gameId_and_playerIdentity", ["gameId", "playerIdentity"]),
+  }).index("by_gameId", ["gameId"]).index("by_gameId_and_playerIdentity", ["gameId", "playerIdentity"]),
 });
