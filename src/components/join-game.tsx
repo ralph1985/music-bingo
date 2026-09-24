@@ -1,20 +1,22 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type JoinGameProps = {
   initialCode?: string;
 };
 
 export default function JoinGame({ initialCode = "" }: JoinGameProps) {
+  const router = useRouter();
   const [joinCode, setJoinCode] = useState(initialCode);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const code = joinCode.trim().toUpperCase();
 
-    if (code) {
-      window.location.assign(`/play/${encodeURIComponent(code)}`);
+    if (/^[A-Z0-9]{1,12}$/.test(code)) {
+      router.push(`/play/${code}`);
     }
   }
 
