@@ -19,6 +19,7 @@ function isSong(value: unknown): value is Song {
 export default function PlaylistImport() {
   const [calledSongIds, setCalledSongIds] = useState<string[]>([]);
   const [createdGame, setCreatedGame] = useState<{ joinCode: string; status: GameStatus } | null>(null);
+  const [dismissedCompletedGameCode, setDismissedCompletedGameCode] = useState<string | null>(null);
   const [fullCardWinnerPlayerId, setFullCardWinnerPlayerId] = useState<string | null>(null);
   const [lineWinnerPlayerId, setLineWinnerPlayerId] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -34,7 +35,7 @@ export default function PlaylistImport() {
     const loadGame = () => fetch(url, { cache: "no-store" })
       .then(async (response) => response.ok ? await response.json() as { calledSongIds?: unknown; fullCardWinnerPlayerId?: unknown; joinCode?: unknown; lineWinnerPlayerId?: unknown; players?: unknown; playlist?: unknown; status?: unknown } : null)
       .then((game) => {
-        if (typeof game?.joinCode === "string" && (game.status === "waiting" || game.status === "playing" || game.status === "completed")) {
+        if (typeof game?.joinCode === "string" && (game.status === "waiting" || game.status === "playing" || game.status === "completed") && !(game.status === "completed" && game.joinCode === dismissedCompletedGameCode)) {
           setCreatedGame({ joinCode: game.joinCode, status: game.status });
           if (Array.isArray(game.playlist) && game.playlist.every(isSong)) {
             setResult({ errors: [], songs: game.playlist });
@@ -53,7 +54,7 @@ export default function PlaylistImport() {
     void loadGame();
     const interval = window.setInterval(() => void loadGame(), 3_000);
     return () => window.clearInterval(interval);
-  }, [currentJoinCode]);
+  }, [currentJoinCode, dismissedCompletedGameCode]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -183,6 +184,19 @@ export default function PlaylistImport() {
     return players.find((player) => player.id === playerId)?.name ?? "Sin ganador";
   }
 
+  function resetForNewGame() {
+    if (createdGame?.status === "completed") {
+      setDismissedCompletedGameCode(createdGame.joinCode);
+    }
+    setCreatedGame(null);
+    setCalledSongIds([]);
+    setFullCardWinnerPlayerId(null);
+    setLineWinnerPlayerId(null);
+    setPlayers([]);
+    setResult(null);
+    setPlaylistText("");
+  }
+
   const playlistSongs = result?.songs.map((song, index) => ({ song, songId: `song-${index + 1}` })) ?? [];
   const calledSongs = playlistSongs.filter(({ songId }) => calledSongIds.includes(songId));
   const pendingSongs = playlistSongs.filter(({ songId }) => !calledSongIds.includes(songId));
@@ -213,6 +227,7 @@ export default function PlaylistImport() {
       {createdGame.status === "waiting" ? <button className="button" disabled={pending} onClick={startGame} type="button">Iniciar partida y cerrar inscripciones</button> : null}
       {createdGame.status !== "completed" ? <button className="button" disabled={pending} onClick={finishGame} type="button">Finalizar partida y ver resultados</button> : null}
       {createdGame.status !== "completed" ? <button className="button" disabled={pending} onClick={cancelGame} type="button">Cancelar partida</button> : null}
+      {createdGame.status === "completed" ? <button className="button" onClick={resetForNewGame} type="button">Nueva partida</button> : null}
       {createdGame.status === "completed" ? <section className="import-result"><p className="field-label">RESULTADOS</p><p>Línea: <strong>{winnerName(lineWinnerPlayerId)}</strong></p><p>¡Bingo!: <strong>{winnerName(fullCardWinnerPlayerId)}</strong></p><p>{calledSongs.length} canciones anunciadas en total.</p></section> : null}
       {lastCalledSong ? <section className="import-result"><p className="field-label">ÚLTIMA CANCIÓN ANUNCIADA</p><p><strong>{lastCalledSong.title}</strong> — {lastCalledSong.artist}</p></section> : null}
       {calledSongs.length > 0 ? <section className="import-result"><p className="field-label">HISTORIAL DE CANCIONES</p><ol>{calledSongs.map(({ song, songId }) => <li key={`called-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol></section> : null}
