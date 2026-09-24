@@ -78,7 +78,7 @@ a {
 .site-footer { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 18px 20px 26px; color: var(--muted); font-size: .7rem; }
 .site-footer a { display: inline-flex; border-radius: 4px; outline-offset: 4px; }
 .site-footer a:focus-visible { outline: 2px solid var(--lime); }
-.site-footer img { width: 108px; height: auto; opacity: .82; }
+.site-footer img { width: 108px; height: auto; filter: brightness(0) invert(1); opacity: .9; }
 .playlist-input { display: block; min-height: 148px; margin-top: 0; resize: vertical; line-height: 1.45; }
 .import-result { margin-top: 20px; }.import-result ul { display: grid; gap: 8px; margin-top: 12px; list-style: none; }.import-result li { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: #ffffff0b; }.import-result li span { color: var(--muted); font-size: .8rem; }
 @media (min-width: 620px) { .entry-grid { grid-template-columns: 1fr 1fr; }.hero { padding-top: 110px; } }
