@@ -17,6 +17,7 @@
   "dependencies": {
     "convex": "^1.46.0",
     "next": "16.3.6",
+    "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -24,6 +25,7 @@
     "@edge-runtime/vm": "^5.0.0",
     "@playwright/test": "^1.63.0",
     "@types/node": "^22.20.4",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "convex-test": "^0.0.59",

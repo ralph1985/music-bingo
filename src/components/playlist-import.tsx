@@ -2,6 +2,9 @@
 
 import { FormEvent, useState } from "react";
 
+import { playerGameUrl } from "../server/games/player-game-url";
+import QrCode from "./qr-code";
+
 type Song = { title: string; artist: string };
 type ImportResult = { songs: Song[]; errors: { line: number; message: string }[] };
 
@@ -12,6 +15,7 @@ export default function PlaylistImport() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [playlistText, setPlaylistText] = useState("");
+  const playerUrl = createdGame ? playerGameUrl(window.location.origin, createdGame.joinCode) : null;
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -93,7 +97,8 @@ export default function PlaylistImport() {
     </div> : null}
     {createdGame ? <div className="import-result" role="status">
       <p>Partida creada con código <strong>{createdGame.joinCode}</strong>.</p>
-      <a className="button" href={`/play/${createdGame.joinCode}`}>Abrir enlace de jugadores</a>
+      <a className="button" href={playerUrl ?? `/play/${createdGame.joinCode}`}>Abrir enlace de jugadores</a>
+      {playerUrl ? <QrCode url={playerUrl} /> : null}
       <p className="field-label" style={{ marginTop: 18 }}>ANUNCIAR CANCIÓN</p>
       {result?.songs.map((song, index) => {
         const songId = `song-${index + 1}`;
