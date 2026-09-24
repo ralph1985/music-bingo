@@ -1,6 +1,7 @@
 type Song = { artist: string; id: string; title: string };
 
 type CreateGameRequest = { joinCode: string; playlist: Song[] };
+type CallSongRequest = { joinCode: string; songId: string };
 
 export function isAuthorizedAdminCommand(providedSecret: string | null, expectedSecret: string): boolean {
   return Boolean(providedSecret && expectedSecret && providedSecret === expectedSecret);
@@ -21,6 +22,14 @@ export function parseCreateGameRequest(value: unknown): CreateGameRequest | null
   }
 
   return { joinCode: value.joinCode, playlist };
+}
+
+export function parseCallSongRequest(value: unknown): CallSongRequest | null {
+  if (!isRecord(value) || typeof value.joinCode !== "string" || typeof value.songId !== "string") {
+    return null;
+  }
+
+  return { joinCode: value.joinCode, songId: value.songId };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

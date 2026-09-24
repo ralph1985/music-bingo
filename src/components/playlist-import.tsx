@@ -6,6 +6,7 @@ type Song = { title: string; artist: string };
 type ImportResult = { songs: Song[]; errors: { line: number; message: string }[] };
 
 export default function PlaylistImport() {
+  const [calledSongIds, setCalledSongIds] = useState<string[]>([]);
   const [createdGame, setCreatedGame] = useState<{ joinCode: string } | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -17,6 +18,7 @@ export default function PlaylistImport() {
     setPending(true);
     setError(null);
     setCreatedGame(null);
+    setCalledSongIds([]);
     const text = new FormData(event.currentTarget).get("playlist");
     const response = await fetch("/api/admin/import-playlist", {
       method: "POST",
@@ -52,6 +54,28 @@ export default function PlaylistImport() {
     setCreatedGame(await response.json() as { joinCode: string });
   }
 
+  async function callSong(songId: string) {
+    if (!createdGame) {
+      return;
+    }
+
+    setPending(true);
+    setError(null);
+    const response = await fetch("/api/admin/calls", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ joinCode: createdGame.joinCode, songId }),
+    });
+    setPending(false);
+
+    if (!response.ok) {
+      setError("No se pudo anunciar la canción.");
+      return;
+    }
+
+    setCalledSongIds((current) => [...current, songId]);
+  }
+
   return <section className="panel">
     <p className="field-label">IMPORTAR CANCIONES</p>
     <p>Usa una canción por línea: <code>Título;Artista</code> o <code>Título - Artista</code>. También puedes pegar CSV.</p>
@@ -70,6 +94,15 @@ export default function PlaylistImport() {
     {createdGame ? <div className="import-result" role="status">
       <p>Partida creada con código <strong>{createdGame.joinCode}</strong>.</p>
       <a className="button" href={`/play/${createdGame.joinCode}`}>Abrir enlace de jugadores</a>
+      <p className="field-label" style={{ marginTop: 18 }}>ANUNCIAR CANCIÓN</p>
+      {result?.songs.map((song, index) => {
+        const songId = `song-${index + 1}`;
+        const called = calledSongIds.includes(songId);
+
+        return <button className="button" disabled={pending || called} key={songId} onClick={() => callSong(songId)} type="button">
+          {called ? "Anunciada" : `${song.title} — ${song.artist}`}
+        </button>;
+      })}
     </div> : null}
   </section>;
 }

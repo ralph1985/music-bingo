@@ -8,6 +8,10 @@ type CreateGameCommandInput = {
   secret: string;
 };
 
+type CallSongCommandInput = Omit<CreateGameCommandInput, "playlist"> & {
+  songId: string;
+};
+
 export class ConvexCommandError extends Error {
   constructor(readonly status: number) {
     super("No se pudo crear la partida.");
@@ -41,6 +45,27 @@ export async function createGameCommand({
   }
 
   return { joinCode: body.joinCode };
+}
+
+export async function callSongCommand({
+  cloudUrl,
+  fetcher = fetch,
+  joinCode,
+  secret,
+  songId,
+}: CallSongCommandInput): Promise<void> {
+  const response = await fetcher(`${deriveConvexSiteUrl(cloudUrl)}/admin/calls`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-admin-command-secret": secret,
+    },
+    body: JSON.stringify({ joinCode, songId }),
+  });
+
+  if (!response.ok) {
+    throw new ConvexCommandError(response.status);
+  }
 }
 
 export function deriveConvexSiteUrl(cloudUrl: string): string {

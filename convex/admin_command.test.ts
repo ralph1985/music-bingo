@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isAuthorizedAdminCommand, parseCreateGameRequest } from "./admin_command";
+import { isAuthorizedAdminCommand, parseCallSongRequest, parseCreateGameRequest } from "./admin_command";
 
 describe("admin command request", () => {
   it("accepts only the configured command secret", () => {
@@ -21,5 +21,13 @@ describe("admin command request", () => {
 
   it("rejects malformed game requests", () => {
     expect(parseCreateGameRequest({ joinCode: "FIESTA", playlist: [{ id: "song-1" }] })).toBeNull();
+  });
+
+  it("parses an administrative song call", () => {
+    expect(parseCallSongRequest({ joinCode: "FIESTA", songId: "song-1" })).toEqual({
+      joinCode: "FIESTA",
+      songId: "song-1",
+    });
+    expect(parseCallSongRequest({ joinCode: "FIESTA" })).toBeNull();
   });
 });
