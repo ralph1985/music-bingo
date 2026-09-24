@@ -20,4 +20,16 @@ export default defineSchema({
       v.literal("completed"),
     ),
   }).index("by_joinCode", ["joinCode"]),
+  players: defineTable({
+    card: v.object({
+      cols: v.number(),
+      rows: v.number(),
+      songs: v.array(songValidator),
+    }),
+    eliminated: v.boolean(),
+    gameId: v.id("games"),
+    markedSongIds: v.array(v.string()),
+    name: v.string(),
+    playerIdentity: v.string(),
+  }).index("by_gameId_and_playerIdentity", ["gameId", "playerIdentity"]),
 });

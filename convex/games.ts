@@ -2,6 +2,10 @@ import { internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
 const MAX_PLAYLIST_SONGS = 75;
+const MIN_PLAYLIST_SONGS = 12;
+
+type StoredSong = { artist: string; id: string; title: string };
+type StoredCard = { cols: number; rows: number; songs: StoredSong[] };
 
 const songValidator = v.object({
   artist: v.string(),
@@ -15,8 +19,14 @@ export const createDemoGame = internalMutation({
     playlist: v.array(songValidator),
   },
   handler: async (ctx, args) => {
+    if (args.playlist.length < MIN_PLAYLIST_SONGS) {
+      throw new Error(`A game requires at least ${MIN_PLAYLIST_SONGS} songs.`);
+    }
     if (args.playlist.length > MAX_PLAYLIST_SONGS) {
       throw new Error(`A demo game can contain at most ${MAX_PLAYLIST_SONGS} songs.`);
+    }
+    if (new Set(args.playlist.map((song) => song.id)).size !== args.playlist.length) {
+      throw new Error("A game playlist requires unique identifiers.");
     }
 
     const existingGame = await ctx.db
@@ -67,6 +77,47 @@ export const callSong = internalMutation({
   },
 });
 
+export const joinPlayer = internalMutation({
+  args: {
+    joinCode: v.string(),
+    name: v.string(),
+    playerIdentity: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_joinCode", (q) => q.eq("joinCode", args.joinCode))
+      .unique();
+
+    if (!game) {
+      throw new Error("Game not found.");
+    }
+
+    const existingPlayer = await ctx.db
+      .query("players")
+      .withIndex("by_gameId_and_playerIdentity", (q) =>
+        q.eq("gameId", game._id).eq("playerIdentity", args.playerIdentity),
+      )
+      .unique();
+
+    if (existingPlayer) {
+      return { card: existingPlayer.card, playerId: existingPlayer._id };
+    }
+
+    const card = generateCard(game.playlist, args.playerIdentity);
+    const playerId = await ctx.db.insert("players", {
+      card,
+      eliminated: false,
+      gameId: game._id,
+      markedSongIds: [],
+      name: args.name,
+      playerIdentity: args.playerIdentity,
+    });
+
+    return { card, playerId };
+  },
+});
+
 export const getByCode = internalQuery({
   args: { joinCode: v.string() },
   handler: async (ctx, args) => {
@@ -76,3 +127,32 @@ export const getByCode = internalQuery({
       .unique();
   },
 });
+
+function generateCard(playlist: StoredSong[], seed: string): StoredCard {
+  const songs = [...playlist];
+  const random = createSeededRandom(seed);
+
+  for (let index = songs.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1));
+    [songs[index], songs[swapIndex]] = [songs[swapIndex], songs[index]];
+  }
+
+  return { cols: 4, rows: 3, songs: songs.slice(0, MIN_PLAYLIST_SONGS) };
+}
+
+function createSeededRandom(seed: string): () => number {
+  let state = 2166136261;
+
+  for (const character of seed) {
+    state ^= character.charCodeAt(0);
+    state = Math.imul(state, 16777619);
+  }
+
+  return () => {
+    state += 0x6d2b79f5;
+    let value = state;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+}
