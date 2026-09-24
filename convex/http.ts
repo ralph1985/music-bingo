@@ -82,7 +82,12 @@ http.route({
     }
 
     const game = await ctx.runQuery(internal.games.getActiveGame, {});
-    return Response.json(game ? { joinCode: game.joinCode, status: game.status } : {});
+    return Response.json(game ? {
+      calledSongIds: game.calledSongIds,
+      joinCode: game.joinCode,
+      playlist: game.playlist,
+      status: game.status,
+    } : {});
   }),
 });
 

@@ -116,7 +116,7 @@ export async function getActiveGameCommand({
   cloudUrl,
   fetcher = fetch,
   secret,
-}: Pick<CreateGameCommandInput, "cloudUrl" | "fetcher" | "secret">): Promise<{ joinCode: string; status: string } | null> {
+}: Pick<CreateGameCommandInput, "cloudUrl" | "fetcher" | "secret">): Promise<{ calledSongIds: string[]; joinCode: string; playlist: Song[]; status: string } | null> {
   const response = await fetcher(`${deriveConvexSiteUrl(cloudUrl)}/admin/games`, {
     method: "GET",
     headers: { "x-admin-command-secret": secret },
@@ -126,10 +126,22 @@ export async function getActiveGameCommand({
     throw new ConvexCommandError(response.status);
   }
 
-  const body = await response.json() as { joinCode?: unknown; status?: unknown };
-  return typeof body.joinCode === "string"
-    ? { joinCode: body.joinCode, status: typeof body.status === "string" ? body.status : "waiting" }
+  const body = await response.json() as { calledSongIds?: unknown; joinCode?: unknown; playlist?: unknown; status?: unknown };
+  if (typeof body.joinCode !== "string" || !Array.isArray(body.playlist) || !Array.isArray(body.calledSongIds)) {
+    return null;
+  }
+  const playlist = body.playlist.filter(isSong);
+  const calledSongIds = body.calledSongIds.filter((songId): songId is string => typeof songId === "string");
+  return playlist.length === body.playlist.length
+    ? { calledSongIds, joinCode: body.joinCode, playlist, status: typeof body.status === "string" ? body.status : "waiting" }
     : null;
+}
+
+function isSong(value: unknown): value is Song {
+  return typeof value === "object" && value !== null
+    && typeof (value as Song).id === "string"
+    && typeof (value as Song).title === "string"
+    && typeof (value as Song).artist === "string";
 }
 
 export function deriveConvexSiteUrl(cloudUrl: string): string {

@@ -8,6 +8,12 @@ import QrCode from "./qr-code";
 type Song = { title: string; artist: string };
 type ImportResult = { songs: Song[]; errors: { line: number; message: string }[] };
 
+function isSong(value: unknown): value is Song {
+  return typeof value === "object" && value !== null
+    && typeof (value as Song).title === "string"
+    && typeof (value as Song).artist === "string";
+}
+
 export default function PlaylistImport() {
   const [calledSongIds, setCalledSongIds] = useState<string[]>([]);
   const [createdGame, setCreatedGame] = useState<{ joinCode: string; status: "waiting" | "playing" } | null>(null);
@@ -19,10 +25,16 @@ export default function PlaylistImport() {
 
   useEffect(() => {
     void fetch("/api/admin/games")
-      .then(async (response) => response.ok ? await response.json() as { joinCode?: unknown; status?: unknown } : null)
+      .then(async (response) => response.ok ? await response.json() as { calledSongIds?: unknown; joinCode?: unknown; playlist?: unknown; status?: unknown } : null)
       .then((game) => {
         if (typeof game?.joinCode === "string" && (game.status === "waiting" || game.status === "playing")) {
           setCreatedGame({ joinCode: game.joinCode, status: game.status });
+          if (Array.isArray(game.playlist) && game.playlist.every(isSong)) {
+            setResult({ errors: [], songs: game.playlist });
+          }
+          if (Array.isArray(game.calledSongIds) && game.calledSongIds.every((songId) => typeof songId === "string")) {
+            setCalledSongIds(game.calledSongIds);
+          }
         }
       });
   }, []);
