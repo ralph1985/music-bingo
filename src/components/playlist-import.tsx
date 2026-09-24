@@ -183,6 +183,11 @@ export default function PlaylistImport() {
     return players.find((player) => player.id === playerId)?.name ?? "Sin ganador";
   }
 
+  const playlistSongs = result?.songs.map((song, index) => ({ song, songId: `song-${index + 1}` })) ?? [];
+  const calledSongs = playlistSongs.filter(({ songId }) => calledSongIds.includes(songId));
+  const pendingSongs = playlistSongs.filter(({ songId }) => !calledSongIds.includes(songId));
+  const lastCalledSong = calledSongs.at(-1)?.song;
+
   return <section className="panel">
     <p className="field-label">IMPORTAR CANCIONES</p>
     <p>Usa una canción por línea: <code>Título;Artista</code> o <code>Título - Artista</code>. También puedes pegar CSV.</p>
@@ -208,14 +213,13 @@ export default function PlaylistImport() {
       {createdGame.status === "waiting" ? <button className="button" disabled={pending} onClick={startGame} type="button">Iniciar partida y cerrar inscripciones</button> : null}
       {createdGame.status !== "completed" ? <button className="button" disabled={pending} onClick={finishGame} type="button">Finalizar partida y ver resultados</button> : null}
       {createdGame.status !== "completed" ? <button className="button" disabled={pending} onClick={cancelGame} type="button">Cancelar partida</button> : null}
-      {createdGame.status === "completed" ? <section className="import-result"><p className="field-label">RESULTADOS</p><p>Línea: <strong>{winnerName(lineWinnerPlayerId)}</strong></p><p>¡Bingo!: <strong>{winnerName(fullCardWinnerPlayerId)}</strong></p><p>{calledSongIds.length} canciones anunciadas en total.</p></section> : null}
-      {createdGame.status !== "completed" ? <p className="field-label" style={{ marginTop: 18 }}>ANUNCIAR CANCIÓN</p> : null}
-      {createdGame.status !== "completed" ? result?.songs.map((song, index) => {
-        const songId = `song-${index + 1}`;
-        const called = calledSongIds.includes(songId);
-
-        return <button className="button" disabled={pending || called} key={songId} onClick={() => callSong(songId)} type="button">
-          {called ? `✓ Anunciada — ${song.title} — ${song.artist}` : `${song.title} — ${song.artist}`}
+      {createdGame.status === "completed" ? <section className="import-result"><p className="field-label">RESULTADOS</p><p>Línea: <strong>{winnerName(lineWinnerPlayerId)}</strong></p><p>¡Bingo!: <strong>{winnerName(fullCardWinnerPlayerId)}</strong></p><p>{calledSongs.length} canciones anunciadas en total.</p></section> : null}
+      {lastCalledSong ? <section className="import-result"><p className="field-label">ÚLTIMA CANCIÓN ANUNCIADA</p><p><strong>{lastCalledSong.title}</strong> — {lastCalledSong.artist}</p></section> : null}
+      {calledSongs.length > 0 ? <section className="import-result"><p className="field-label">HISTORIAL DE CANCIONES</p><ol>{calledSongs.map(({ song, songId }) => <li key={`called-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol></section> : null}
+      {createdGame.status !== "completed" ? <p className="field-label" style={{ marginTop: 18 }}>CANCIONES PENDIENTES</p> : null}
+      {createdGame.status !== "completed" ? pendingSongs.map(({ song, songId }) => {
+        return <button className="button" disabled={pending} key={songId} onClick={() => callSong(songId)} type="button">
+          {song.title} — {song.artist}
         </button>;
       }) : null}
     </div> : null}
