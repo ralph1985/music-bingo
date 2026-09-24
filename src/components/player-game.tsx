@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useState, useSyncExternalStore } from "react";
 
 import { api } from "../../convex/_generated/api";
 import { loadLocalGame, saveLocalGame } from "../storage/local-storage";
@@ -10,16 +10,32 @@ type PlayerGameProps = {
   joinCode: string;
 };
 
+let cachedStoredGame: ReturnType<typeof loadLocalGame> | undefined;
+
+function subscribeToLocalGame(): () => void {
+  return () => {};
+}
+
+function getStoredGame() {
+  if (cachedStoredGame === undefined) {
+    cachedStoredGame = loadLocalGame(window.localStorage);
+  }
+
+  return cachedStoredGame;
+}
+
 export default function PlayerGame({ joinCode }: PlayerGameProps) {
   const joinPlayer = useMutation(api.games.joinPlayer);
-  const [savedGame] = useState(() =>
-    typeof window === "undefined" ? null : loadLocalGame(window.localStorage),
+  const savedGame = useSyncExternalStore(
+    subscribeToLocalGame,
+    getStoredGame,
+    () => null,
   );
   const recoveredGame = savedGame?.gameId === joinCode ? savedGame : null;
-  const [name, setName] = useState(() => recoveredGame?.player.name ?? "");
-  const [playerIdentity, setPlayerIdentity] = useState<string | null>(
-    () => recoveredGame?.player.id ?? null,
-  );
+  const [enteredName, setEnteredName] = useState("");
+  const name = recoveredGame?.player.name ?? enteredName;
+  const [joinedIdentity, setJoinedIdentity] = useState<string | null>(null);
+  const playerIdentity = joinedIdentity ?? recoveredGame?.player.id ?? null;
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const game = useQuery(
@@ -54,8 +70,7 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
         markedSongIds: [],
         player: { id: identity, name: normalizedName },
       });
-      setPlayerIdentity(identity);
-      setName(normalizedName);
+      setJoinedIdentity(identity);
     } catch {
       setError("No se pudo entrar en esta partida.");
     } finally {
@@ -90,7 +105,7 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
         id="playerName"
         maxLength={50}
         name="playerName"
-        onChange={(event) => setName(event.target.value)}
+        onChange={(event) => setEnteredName(event.target.value)}
         required
         value={name}
       />
