@@ -107,6 +107,21 @@ export const cancelGame = internalMutation({
   },
 });
 
+export const getActiveGame = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const waitingGame = await ctx.db
+      .query("games")
+      .withIndex("by_status", (q) => q.eq("status", "waiting"))
+      .first();
+
+    return waitingGame ?? await ctx.db
+      .query("games")
+      .withIndex("by_status", (q) => q.eq("status", "playing"))
+      .first();
+  },
+});
+
 export const joinPlayer = mutation({
   args: {
     joinCode: v.string(),

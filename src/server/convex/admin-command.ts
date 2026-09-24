@@ -13,8 +13,8 @@ type CallSongCommandInput = Omit<CreateGameCommandInput, "playlist"> & {
 };
 
 export class ConvexCommandError extends Error {
-  constructor(readonly status: number) {
-    super("No se pudo crear la partida.");
+  constructor(readonly status: number, message = "No se pudo crear la partida.") {
+    super(message);
   }
 }
 
@@ -35,7 +35,11 @@ export async function createGameCommand({
   });
 
   if (!response.ok) {
-    throw new ConvexCommandError(response.status);
+    const errorBody = await response.json().catch(() => null) as { error?: unknown } | null;
+    throw new ConvexCommandError(
+      response.status,
+      typeof errorBody?.error === "string" ? errorBody.error : undefined,
+    );
   }
 
   const body = (await response.json()) as { joinCode?: unknown };

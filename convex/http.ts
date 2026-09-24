@@ -28,6 +28,12 @@ http.route({
       return Response.json({ error: "Solicitud inválida." }, { status: 400 });
     }
 
+    const activeGame = await ctx.runQuery(internal.games.getActiveGame, {});
+
+    if (activeGame) {
+      return Response.json({ error: `Ya hay una partida activa (${activeGame.joinCode}). Cancélala antes de crear otra.` }, { status: 423 });
+    }
+
     try {
       const gameId = await ctx.runMutation(internal.games.createGame, command);
 
