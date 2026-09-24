@@ -80,7 +80,9 @@ describe("game storage", () => {
 
     await t.mutation(internal.games.finishGame, { joinCode: "FINALIZA" });
 
-    await expect(t.query(internal.games.getByCode, { joinCode: "FINALIZA" })).resolves.toMatchObject({ status: "completed" });
+    await expect(t.query(internal.games.getActiveAdminGame, {})).resolves.toMatchObject({
+      game: { joinCode: "FINALIZA", status: "completed" },
+    });
     await expect(t.mutation(internal.games.createGame, { joinCode: "OTRA1", playlist })).resolves.not.toBeNull();
   });
 

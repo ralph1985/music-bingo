@@ -168,6 +168,10 @@ export const getActiveAdminGame = internalQuery({
     const game = waitingGame ?? await ctx.db
       .query("games")
       .withIndex("by_status", (q) => q.eq("status", "playing"))
+      .first() ?? await ctx.db
+      .query("games")
+      .withIndex("by_status", (q) => q.eq("status", "completed"))
+      .order("desc")
       .first();
     if (!game) {
       return null;
