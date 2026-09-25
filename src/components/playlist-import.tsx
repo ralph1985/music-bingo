@@ -207,6 +207,7 @@ export default function PlaylistImport() {
   const calledSongs = playlistSongs.filter(({ songId }) => calledSongIds.includes(songId));
   const pendingSongs = playlistSongs.filter(({ songId }) => !calledSongIds.includes(songId));
   const lastCalledSong = calledSongs.at(-1)?.song;
+  const missingPlayersToStart = Math.max(0, 2 - players.length);
 
   return <section className="panel">
     {error ? <p role="alert">{error}</p> : null}
@@ -236,9 +237,10 @@ export default function PlaylistImport() {
           <p>Partida creada con código <strong>{createdGame.joinCode}</strong>.</p>
           <p>{createdGame.status === "waiting" ? "Inscripciones abiertas." : createdGame.status === "playing" ? "Partida en curso: inscripciones cerradas." : "Partida finalizada. Consulta los resultados."}</p>
           <p>{players.length} jugador{players.length === 1 ? "" : "es"} en sala{players.length ? `: ${players.map((player) => player.name).join(", ")}` : "."}</p>
+          {createdGame.status === "waiting" && missingPlayersToStart > 0 ? <p role="alert">Falta{missingPlayersToStart === 1 ? "" : "n"} {missingPlayersToStart} jugador{missingPlayersToStart === 1 ? "" : "es"} para iniciar la partida. El mínimo es 2.</p> : null}
           <a className="button" href={playerUrl ?? `/play/${createdGame.joinCode}`}>Abrir enlace de jugadores</a>
           {playerUrl ? <QrCode url={playerUrl} /> : null}
-          {createdGame.status === "waiting" ? <button className="button" disabled={pending} onClick={startGame} type="button">Iniciar partida y cerrar inscripciones</button> : null}
+          {createdGame.status === "waiting" ? <button className="button" disabled={pending || missingPlayersToStart > 0} onClick={startGame} type="button">Iniciar partida y cerrar inscripciones</button> : null}
           {createdGame.status !== "completed" ? <button className="button" disabled={pending} onClick={finishGame} type="button">Finalizar partida y ver resultados</button> : null}
           {createdGame.status !== "completed" ? <button className="button" disabled={pending} onClick={cancelGame} type="button">Cancelar partida</button> : null}
           {createdGame.status === "completed" ? <button className="button" onClick={resetForNewGame} type="button">Nueva partida</button> : null}

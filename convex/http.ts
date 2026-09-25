@@ -110,7 +110,11 @@ http.route({
       return Response.json({ error: "Solicitud inválida." }, { status: 400 });
     }
 
-    await ctx.runMutation(internal.games.startGame, { joinCode: body.joinCode });
+    try {
+      await ctx.runMutation(internal.games.startGame, { joinCode: body.joinCode });
+    } catch {
+      return Response.json({ error: "Se necesitan al menos 2 jugadores para iniciar la partida." }, { status: 422 });
+    }
     return Response.json({ ok: true });
   }),
 });

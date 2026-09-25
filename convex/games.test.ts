@@ -179,6 +179,24 @@ describe("game storage", () => {
     });
   });
 
+  it("does not start a round until two distinct players have joined", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+    await t.mutation(internal.games.createGame, { joinCode: "MINIMO", playlist });
+    await t.mutation(api.games.joinPlayer, {
+      joinCode: "MINIMO",
+      name: "Solo uno",
+      playerIdentity: "single-player",
+    });
+
+    await expect(t.mutation(internal.games.startGame, { joinCode: "MINIMO" })).rejects.toThrow("at least 2 players");
+    await expect(t.query(internal.games.getByCode, { joinCode: "MINIMO" })).resolves.toMatchObject({ status: "waiting" });
+  });
+
   it("rejects a playlist with fewer than 24 songs", async () => {
     const t = convexTest(schema, modules);
 
@@ -205,6 +223,9 @@ describe("game storage", () => {
 
     await expect(t.query(api.games.getJoinAvailability, { joinCode: "ABIERTA" })).resolves.toEqual({ available: true });
     await expect(t.query(api.games.getJoinAvailability, { joinCode: "INEXISTENTE" })).resolves.toEqual({ available: false });
+
+    await t.mutation(api.games.joinPlayer, { joinCode: "ABIERTA", name: "Primero", playerIdentity: "availability-player-1" });
+    await t.mutation(api.games.joinPlayer, { joinCode: "ABIERTA", name: "Segundo", playerIdentity: "availability-player-2" });
 
     await t.mutation(internal.games.startGame, { joinCode: "ABIERTA" });
 
@@ -408,6 +429,8 @@ describe("game storage", () => {
     const t = convexTest(schema, modules);
     const playlist = Array.from({ length: 24 }, (_, index) => ({ artist: `Artista ${index}`, id: `song-${index}`, title: `Canción ${index}` }));
     await t.mutation(internal.games.createGame, { joinCode: "EMPEZAR", playlist });
+    await t.mutation(api.games.joinPlayer, { joinCode: "EMPEZAR", name: "Primero", playerIdentity: "start-player-1" });
+    await t.mutation(api.games.joinPlayer, { joinCode: "EMPEZAR", name: "Segundo", playerIdentity: "start-player-2" });
     await t.mutation(internal.games.startGame, { joinCode: "EMPEZAR" });
 
     await expect(t.mutation(api.games.joinPlayer, {

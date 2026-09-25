@@ -4,6 +4,7 @@ import { v } from "convex/values";
 
 const MAX_PLAYLIST_SONGS = 75;
 const MIN_PLAYLIST_SONGS = 24;
+const MIN_GAME_PLAYERS = 2;
 const CARD_SONGS = 12;
 
 type StoredSong = { artist: string; id: string; title: string };
@@ -102,6 +103,14 @@ export const startGame = internalMutation({
 
     if (!game || game.status !== "waiting") {
       return null;
+    }
+
+    const players = await ctx.db
+      .query("players")
+      .withIndex("by_gameId", (q) => q.eq("gameId", game._id))
+      .take(MIN_GAME_PLAYERS);
+    if (players.length < MIN_GAME_PLAYERS) {
+      throw new Error(`A game requires at least ${MIN_GAME_PLAYERS} players to start.`);
     }
 
     await ctx.db.patch("games", game._id, { status: "playing" });
