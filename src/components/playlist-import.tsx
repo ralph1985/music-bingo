@@ -32,6 +32,8 @@ export default function PlaylistImport() {
   const [pending, setPending] = useState(false);
   const [players, setPlayers] = useState<AdminPlayer[]>([]);
   const [playlistText, setPlaylistText] = useState("");
+  const [spotifyConnected, setSpotifyConnected] = useState(false);
+  const [spotifyPlaylist, setSpotifyPlaylist] = useState("");
   const currentJoinCode = createdGame?.joinCode;
   const playerUrl = createdGame ? playerGameUrl(window.location.origin, createdGame.joinCode) : null;
 
@@ -60,6 +62,12 @@ export default function PlaylistImport() {
     const interval = window.setInterval(() => void loadGame(), 3_000);
     return () => window.clearInterval(interval);
   }, [currentJoinCode, dismissedCompletedGameCode]);
+
+  useEffect(() => {
+    void fetch("/api/admin/spotify/status", { cache: "no-store" })
+      .then(async (response) => response.ok ? await response.json() as { connected?: unknown } : null)
+      .then((status) => setSpotifyConnected(status?.connected === true));
+  }, []);
 
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -103,6 +111,32 @@ export default function PlaylistImport() {
     const game = await response.json() as { joinCode: string };
     setCreatedGame({ ...game, status: "waiting" });
     setActiveTab("room");
+  }
+
+  async function importSpotifyPlaylist() {
+    setPending(true);
+    setError(null);
+    const response = await fetch("/api/admin/import-spotify-playlist", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ playlist: spotifyPlaylist }),
+    });
+    setPending(false);
+    if (!response.ok) {
+      const body = await response.json().catch(() => null) as { error?: unknown } | null;
+      setError(typeof body?.error === "string" ? body.error : "No se pudo importar la playlist de Spotify.");
+      return;
+    }
+
+    const body = await response.json() as { songs?: unknown };
+    const songs = Array.isArray(body.songs) ? body.songs.flatMap((song) => isSong(song) ? [song] : []) : [];
+    if (songs.length !== (Array.isArray(body.songs) ? body.songs.length : 0)) {
+      setError("Spotify devolvió una playlist inválida.");
+      return;
+    }
+    setPlaylistText(songs.map((song) => `${song.title};${song.artist}`).join("\n"));
+    setResult({ errors: [], songs });
+    setSpotifyPlaylist("");
   }
 
   async function startGame() {
@@ -225,6 +259,16 @@ export default function PlaylistImport() {
           <p className="field-label">IMPORTAR CANCIONES</p>
           <p>Usa una canción por línea: <code>Título;Artista</code> o <code>Título - Artista</code>. También puedes pegar CSV.</p>
           <p><strong>Mínimo: 24 canciones.</strong> Recomendamos entre 30 y 45 canciones para que los cartones sean más variados, especialmente con grupos grandes.</p>
+          <section className="import-result">
+            <p className="field-label">IMPORTAR DESDE SPOTIFY</p>
+            <p>{spotifyConnected ? "Spotify está conectado. Pega una URL o URI de playlist." : "Conecta la cuenta Spotify propietaria o colaboradora de la playlist."}</p>
+            {spotifyConnected ? <>
+              <label className="field-label" htmlFor="spotify-playlist" style={{ marginTop: 18 }}>ENLACE DE PLAYLIST DE SPOTIFY</label>
+              <input className="field" id="spotify-playlist" onChange={(event) => setSpotifyPlaylist(event.target.value)} placeholder="https://open.spotify.com/playlist/..." value={spotifyPlaylist} />
+              <button className="button" disabled={pending || !spotifyPlaylist.trim()} onClick={importSpotifyPlaylist} type="button">{pending ? "Cargando…" : "Cargar canciones"}</button>
+              <button className="button" disabled={pending} onClick={() => { void fetch("/api/admin/spotify/disconnect", { method: "POST" }).then(() => setSpotifyConnected(false)); }} type="button">Desconectar Spotify</button>
+            </> : <a className="button" href="/api/admin/spotify/connect">Conectar Spotify</a>}
+          </section>
           <form onSubmit={onSubmit}>
             <label className="field-label" htmlFor="playlist" style={{ marginTop: 18 }}>LISTA DE CANCIONES</label>
             <textarea className="field playlist-input" id="playlist" name="playlist" required rows={8} value={playlistText} onChange={(event) => setPlaylistText(event.target.value)} placeholder={"La Flaca;Jarabe de Palo\nDancing Queen;ABBA"} />
