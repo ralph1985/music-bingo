@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { playerGameUrl } from "../server/games/player-game-url";
 import { AdminGameStatus, AdminTabId, AdminTabs } from "./admin-tabs";
+import { GameLifecycle, PlayerLobby, ResultCelebration } from "./host-game-status";
 import QrCode from "./qr-code";
 
 type Song = { title: string; artist: string };
@@ -380,14 +381,18 @@ export default function PlaylistImport() {
           </div> : null}
         </>,
         room: createdGame ? <div className="import-result">
-          <p>Partida creada con código <strong>{createdGame.joinCode}</strong>.</p>
+          <GameLifecycle status={createdGame.status} />
+          <section className="room-share-card">
+            <p className="field-label">CÓDIGO DE LA PARTIDA</p>
+            <p className="join-code">{createdGame.joinCode}</p>
+            <p>Comparte el código o escanea el QR para entrar en la sala.</p>
+            <div className="room-share-actions"><a className="button" href={playerUrl ?? `/play/${createdGame.joinCode}`}>Abrir enlace de jugadores</a><button className="button button-secondary" disabled={pending} onClick={() => { void copyJoinCode(); }} type="button">Copiar código</button></div>
+            {playerUrl ? <QrCode url={playerUrl} /> : null}
+          </section>
           <p>{createdGame.status === "waiting" ? "Inscripciones abiertas." : createdGame.status === "playing" ? "Partida en curso: inscripciones cerradas." : "Partida finalizada. Consulta los resultados."}</p>
-          <p>{players.length} jugador{players.length === 1 ? "" : "es"} en sala{players.length ? `: ${players.map((player) => player.name).join(", ")}` : "."}</p>
+          <PlayerLobby players={players} />
           {createdGame.status === "waiting" && missingPlayersToStart > 0 ? <p role="alert">Falta{missingPlayersToStart === 1 ? "" : "n"} {missingPlayersToStart} jugador{missingPlayersToStart === 1 ? "" : "es"} para iniciar la partida. El mínimo es 2.</p> : null}
           {roomAction ? <p className="room-action-feedback" role="status">{roomAction === "starting" ? "Iniciando partida…" : roomAction === "finishing" ? "Finalizando partida…" : "Cancelando partida…"}</p> : null}
-          <a className="button" href={playerUrl ?? `/play/${createdGame.joinCode}`}>Abrir enlace de jugadores</a>
-          <button className="button button-secondary" disabled={pending} onClick={() => { void copyJoinCode(); }} type="button">Copiar código de partida</button>
-          {playerUrl ? <QrCode url={playerUrl} /> : null}
           {createdGame.status === "waiting" ? <button className="button" disabled={pending || missingPlayersToStart > 0} onClick={startGame} type="button">{roomAction === "starting" ? "Iniciando…" : "Iniciar partida y cerrar inscripciones"}</button> : null}
           {createdGame.status !== "completed" ? <button className="button" disabled={pending} onClick={finishGame} type="button">{roomAction === "finishing" ? "Finalizando…" : "Finalizar partida y ver resultados"}</button> : null}
           {createdGame.status !== "completed" && !cancelConfirmationOpen ? <button className="button button-danger" disabled={pending} onClick={() => setCancelConfirmationOpen(true)} type="button">Cancelar partida</button> : null}
@@ -399,7 +404,7 @@ export default function PlaylistImport() {
           {calledSongs.length > 0 ? <section className="import-result"><p className="field-label">HISTORIAL DE CANCIONES</p><ol>{calledSongs.map(({ song, songId }) => <li key={`called-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol></section> : null}
           {createdGame.status === "playing" ? <><p className="field-label" style={{ marginTop: 18 }}>CANCIONES PENDIENTES</p>{pendingSongs.map(({ song, songId }) => <button className="button" disabled={pending} key={songId} onClick={() => callSong(songId)} type="button">{song.title} — {song.artist}</button>)}</> : null}
         </div> : <p>Inicia la partida para empezar a anunciar canciones.</p>,
-        results: createdGame?.status === "completed" ? <section className="import-result"><p className="field-label">RESULTADOS</p><p>Inicio: <strong>{formatGameTimestamp(startedAt)}</strong></p><p>Fin: <strong>{formatGameTimestamp(completedAt)}</strong></p><p>Línea: <strong>{winnerName(lineWinnerPlayerId)}</strong></p><p>¡Bingo!: <strong>{winnerName(fullCardWinnerPlayerId)}</strong></p><p>{calledSongs.length} canciones anunciadas en total.</p>{calledSongs.length > 0 ? <ol className="result-song-list">{calledSongs.map(({ song, songId }) => <li key={`result-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol> : null}<button className="button button-secondary" onClick={() => { void copyGameSummary(); }} type="button">Copiar resumen</button>{copyFeedback ? <p className="copy-feedback" role="status">{copyFeedback}</p> : null}</section> : <p>Los resultados estarán disponibles al finalizar la partida.</p>,
+        results: createdGame?.status === "completed" ? <section className="import-result"><ResultCelebration fullCardWinner={winnerName(fullCardWinnerPlayerId)} lineWinner={winnerName(lineWinnerPlayerId)} /><p>Inicio: <strong>{formatGameTimestamp(startedAt)}</strong></p><p>Fin: <strong>{formatGameTimestamp(completedAt)}</strong></p><p>{calledSongs.length} canciones anunciadas en total.</p>{calledSongs.length > 0 ? <ol className="result-song-list">{calledSongs.map(({ song, songId }) => <li key={`result-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol> : null}<button className="button button-secondary" onClick={() => { void copyGameSummary(); }} type="button">Copiar resumen</button>{copyFeedback ? <p className="copy-feedback" role="status">{copyFeedback}</p> : null}</section> : <p>Los resultados estarán disponibles al finalizar la partida.</p>,
       }}
     </AdminTabs>
   </section>;
