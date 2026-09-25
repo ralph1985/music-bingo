@@ -14,5 +14,6 @@ describe("PlayerGame", () => {
 
     expect(markup).toContain('name="playerName"');
     expect(markup).toContain("Entrar a jugar");
+    expect(markup).toContain('data-icon="ticket"');
   });
 });

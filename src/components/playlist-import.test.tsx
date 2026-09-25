@@ -11,6 +11,9 @@ describe("PlaylistImport", () => {
     expect(markup).not.toContain("Crear partida");
     expect(markup).toContain("Mínimo: 24 canciones");
     expect(markup).toContain("Recomendamos entre 30 y 45 canciones");
+    expect(markup).toContain('data-icon="spotify"');
+    expect(markup).toContain('data-icon="clipboard"');
+    expect(markup).toContain('data-icon="eye"');
   });
 
   it("starts the administrator dashboard on the setup tab", () => {
@@ -43,6 +46,8 @@ describe("PlaylistImport", () => {
     expect(markup).toContain('role="alertdialog"');
     expect(markup).toContain("Cancelar partida definitivamente");
     expect(markup).toContain("Mantener partida");
+    expect(markup).toContain('data-icon="x-circle"');
+    expect(markup).toContain('data-icon="check"');
   });
 
   it("builds a copyable results summary with the called songs and timestamps", () => {

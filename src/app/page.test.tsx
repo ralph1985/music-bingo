@@ -9,7 +9,9 @@ describe("Home", () => {
 
     expect(page).toContain("Organizar partida");
     expect(page).toContain('href="/admin"');
+    expect(page).toContain('data-icon="sliders"');
     expect(page).toContain("Entrar a jugar");
     expect(page).toContain('href="/play"');
+    expect(page).toContain('data-icon="ticket"');
   });
 });

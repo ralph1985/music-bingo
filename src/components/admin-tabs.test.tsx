@@ -52,6 +52,10 @@ describe("AdminTabs", () => {
     expect(markup).toContain('role="tab"');
     expect(markup).toContain('aria-selected="true"');
     expect(markup).toContain('role="tabpanel"');
+    expect(markup).toContain('data-icon="sliders"');
+    expect(markup).toContain('data-icon="users"');
+    expect(markup).toContain('data-icon="radio"');
+    expect(markup).toContain('data-icon="trophy"');
     expect(markup).toContain("Preparar contenido");
     expect(markup).not.toContain("Sala contenido");
   });

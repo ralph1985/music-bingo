@@ -4,6 +4,8 @@ import Image from "next/image";
 import { toDataURL } from "qrcode";
 import { useEffect, useState } from "react";
 
+import { Icon } from "./icons";
+
 type QrCodeProps = {
   url: string;
 };
@@ -32,7 +34,7 @@ export default function QrCode({ url }: QrCodeProps) {
 
   return <section className="qr-code">
     <Image alt="Código QR del enlace de jugadores" height={320} src={source} unoptimized width={320} />
-    <button className="button button-secondary" onClick={() => setExpanded(true)} type="button">Ver QR en grande</button>
+    <button className="button button-secondary" onClick={() => setExpanded(true)} type="button"><Icon name="qr-code" /> Ver QR en grande</button>
     {expanded ? <QrCodeFullscreen onClose={() => setExpanded(false)} source={source} /> : null}
   </section>;
 }
@@ -42,7 +44,7 @@ export function QrCodeFullscreen({ onClose, source }: { onClose: () => void; sou
     <section className="qr-fullscreen-card">
       <p className="field-label" id="qr-fullscreen-title">CÓDIGO PARA JUGADORES</p>
       <Image alt="Código QR ampliado para jugadores" height={520} src={source} unoptimized width={520} />
-      <button aria-label="Cerrar QR ampliado" className="button button-secondary" onClick={onClose} type="button">Cerrar</button>
+      <button aria-label="Cerrar QR ampliado" className="button button-secondary" onClick={onClose} type="button"><Icon name="x-circle" /> Cerrar</button>
     </section>
   </div>;
 }

@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { Icon } from "../components/icons";
+
 export default function Home() {
   return (
     <main className="landing shell">
@@ -11,18 +13,18 @@ export default function Home() {
       </section>
       <section className="entry-grid" aria-label="Elige cómo participar">
         <Link className="entry-card host-entry" href="/admin">
-          <span className="entry-icon">✦</span>
+          <Icon className="entry-icon" name="sliders" />
           <span className="entry-label">TENGO EL CONTROL</span>
           <strong>Organizar partida</strong>
           <span>Crear la sesión, cargar canciones y lanzar cada tema.</span>
-          <span className="entry-arrow">→</span>
+          <Icon className="entry-arrow" name="external-link" />
         </Link>
         <Link className="entry-card player-entry" href="/play">
-          <span className="entry-icon">♬</span>
+          <Icon className="entry-icon" name="ticket" />
           <span className="entry-label">TENGO UN CÓDIGO</span>
           <strong>Entrar a jugar</strong>
           <span>Recibir tu cartón y marcar lo que escuches.</span>
-          <span className="entry-arrow">→</span>
+          <Icon className="entry-arrow" name="external-link" />
         </Link>
       </section>
       <p className="preview-note">Abre una partida o entra con el código que te comparta la organización.</p>

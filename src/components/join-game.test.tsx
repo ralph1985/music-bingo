@@ -14,6 +14,8 @@ describe("JoinGame", () => {
     expect(markup).toContain('maxLength="6"');
     expect(markup).toContain("CÓDIGO DE PARTIDA");
     expect(markup).toContain("Continuar");
+    expect(markup).toContain('data-icon="ticket"');
+    expect(markup).toContain('data-icon="play"');
     expect(markup).toContain("disabled");
   });
 });

@@ -16,5 +16,6 @@ describe("QrCode", () => {
     expect(markup).toContain('role="dialog"');
     expect(markup).toContain("CÓDIGO PARA JUGADORES");
     expect(markup).toContain("Cerrar QR ampliado");
+    expect(markup).toContain('data-icon="x-circle"');
   });
 });

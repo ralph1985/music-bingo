@@ -5,6 +5,7 @@ import { type FormEvent, useState, useSyncExternalStore } from "react";
 
 import { api } from "../../convex/_generated/api";
 import { loadLocalGame, saveLocalGame } from "../storage/local-storage";
+import { Icon } from "./icons";
 
 type PlayerGameProps = {
   joinCode: string;
@@ -16,7 +17,7 @@ function FeedbackModal({ message, onClose }: { message: string; onClose: () => v
   return <div aria-labelledby="feedback-title" className="modal-backdrop" role="dialog" aria-modal="true">
     <section className="modal-card">
       <p className="field-label">RESULTADO DE LA JUGADA</p>
-      <h2 id="feedback-title">{won ? "¡Enhorabuena!" : "Revisa tu cartón"}</h2>
+      <h2 id="feedback-title"><Icon name={won ? "check-circle" : "alert-circle"} /> {won ? "¡Enhorabuena!" : "Revisa tu cartón"}</h2>
       <p>{message}</p>
       <button autoFocus className="button" onClick={onClose} type="button">Continuar jugando</button>
     </section>
@@ -149,10 +150,11 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
     const canClaimFullCard = cardSongIds.every((songId) => game.player.markedSongIds.includes(songId));
     const gameFinished = game.game.status === "completed" || game.game.status === "cancelled";
     const statusLabel = game.game.status === "waiting" ? "EN ESPERA" : game.game.status === "playing" ? "EN CURSO" : game.game.status === "completed" ? "FINALIZADA" : "CANCELADA";
+    const statusIcon = game.game.status === "waiting" ? "ticket" : game.game.status === "playing" ? "radio" : game.game.status === "completed" ? "check-circle" : "ban";
 
     return <>
       <section className="panel">
-        <p className="field-label">PARTIDA {statusLabel}</p>
+        <p className="field-label"><Icon name={statusIcon} /> PARTIDA {statusLabel}</p>
         <p>{gameFinished ? "La partida ha terminado. Gracias por jugar." : `${game.game.calledSongCount} canciones anunciadas. La línea se completa en vertical: 4 canciones de una columna. Puedes marcar y corregir tu cartón; se validará al reclamar.`}</p>
       </section>
       <section className="card-grid" aria-label="Tu cartón musical">
@@ -160,14 +162,14 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
           <strong>{song.title}</strong><span>{song.artist}</span>
         </button>)}
       </section>
-      {!game.game.lineClaimed && !game.player.eliminated ? <button className="button" disabled={gameFinished || !canClaimLine} onClick={onClaimLine} type="button">Reclamar línea vertical (4 canciones)</button> : null}
-      {!game.game.fullCardClaimed && !game.player.eliminated ? <button className="button" disabled={gameFinished || !canClaimFullCard} onClick={onClaimFullCard} type="button">¡Bingo!</button> : null}
+      {!game.game.lineClaimed && !game.player.eliminated ? <button className="button" disabled={gameFinished || !canClaimLine} onClick={onClaimLine} type="button"><Icon name="columns" /> Reclamar línea vertical (4 canciones)</button> : null}
+      {!game.game.fullCardClaimed && !game.player.eliminated ? <button className="button" disabled={gameFinished || !canClaimFullCard} onClick={onClaimFullCard} type="button"><Icon name="trophy" /> ¡Bingo!</button> : null}
       {error ? <FeedbackModal message={error} onClose={() => setError(null)} /> : null}
     </>;
   }
 
   return <section className="panel">
-    <p className="field-label">UNIRSE A LA PARTIDA</p>
+    <p className="field-label"><Icon name="ticket" /> UNIRSE A LA PARTIDA</p>
     <form onSubmit={onSubmit}>
       <label className="field-label" htmlFor="playerName">TU NOMBRE</label>
       <input
@@ -180,7 +182,7 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
         value={name}
       />
       <button className="button" disabled={joining} type="submit">
-        {joining ? "Entrando…" : "Entrar a jugar"}
+        <Icon name="play" /> {joining ? "Entrando…" : "Entrar a jugar"}
       </button>
     </form>
     {error ? <FeedbackModal message={error} onClose={() => setError(null)} /> : null}

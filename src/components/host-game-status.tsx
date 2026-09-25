@@ -1,6 +1,8 @@
 type GameStatus = "waiting" | "playing" | "completed";
 type Player = { id: string; name: string };
 
+import { Icon } from "./icons";
+
 const stages = [
   { id: "setup", label: "Preparar" },
   { id: "waiting", label: "Inscripciones" },
@@ -21,7 +23,7 @@ export function GameLifecycle({ status }: { status: GameStatus }) {
 
 export function PlayerLobby({ players }: { players: Player[] }) {
   return <section aria-live="polite" className="player-lobby">
-    <p className="field-label">SALA DE ESPERA</p>
+    <p className="field-label"><Icon name="users" /> SALA DE ESPERA</p>
     <p><strong>{players.length}</strong> jugador{players.length === 1 ? "" : "es"} en sala</p>
     {players.length > 0 ? <ul>{players.map((player) => <li key={player.id}><span aria-hidden="true" className="player-avatar">{initials(player.name)}</span><span>{player.name}</span></li>)}</ul> : <p className="player-lobby-empty">Aún no se ha unido nadie. Comparte el código o el QR.</p>}
   </section>;
@@ -31,8 +33,8 @@ export function ResultCelebration({ fullCardWinner, lineWinner }: { fullCardWinn
   return <section className="result-celebration">
     <div aria-hidden="true" className="celebration-sparkles">✦ ✧ ✦</div>
     <p className="field-label">RESULTADO DE LA RONDA</p>
-    <div className="result-winner result-winner-main"><span>¡Bingo!</span><strong>{fullCardWinner}</strong></div>
-    <div className="result-winner"><span>Línea</span><strong>{lineWinner}</strong></div>
+    <div className="result-winner result-winner-main"><span><Icon name="trophy" /> ¡Bingo!</span><strong>{fullCardWinner}</strong></div>
+    <div className="result-winner"><span><Icon name="columns" /> Línea</span><strong>{lineWinner}</strong></div>
   </section>;
 }
 

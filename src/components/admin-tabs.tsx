@@ -2,10 +2,19 @@
 
 import { KeyboardEvent, ReactNode } from "react";
 
+import { Icon, type IconName } from "./icons";
+
 export type AdminTabId = "setup" | "room" | "calls" | "results";
 export type AdminGameStatus = "waiting" | "playing" | "completed";
 
 type AdminTab = { id: AdminTabId; label: string; disabled: boolean };
+
+const tabIcons: Record<AdminTabId, IconName> = {
+  calls: "radio",
+  results: "trophy",
+  room: "users",
+  setup: "sliders",
+};
 
 type AdminTabsProps = {
   activeTab: AdminTabId;
@@ -59,7 +68,7 @@ export function AdminTabs({ activeTab, children, onTabChange, status }: AdminTab
         role="tab"
         tabIndex={activeTab === tab.id ? 0 : -1}
         type="button"
-      >{tab.label}</button>)}
+      ><Icon name={tabIcons[tab.id]} /><span>{tab.label}</span></button>)}
     </div>
     <div aria-labelledby={`admin-tab-${activeTab}`} className="admin-tabpanel" id={`admin-panel-${activeTab}`} role="tabpanel" tabIndex={0}>
       {children[activeTab]}

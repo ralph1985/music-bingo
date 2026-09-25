@@ -14,5 +14,6 @@ describe("PlayerPage", () => {
 
     expect(markup).toContain("PARTIDA FIESTA1");
     expect(markup).toContain("Unirse a la partida FIESTA1");
+    expect(markup).toContain('data-icon="arrow-left"');
   });
 });

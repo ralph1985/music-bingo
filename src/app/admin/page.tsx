@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 
 import AdminLogin from "@/components/admin-login";
+import { Icon } from "../../components/icons";
 import PlaylistImport from "@/components/playlist-import";
 import { ADMIN_SESSION_COOKIE, hasAdminSession } from "@/server/auth/admin-session";
 
@@ -13,7 +14,7 @@ export default async function AdminPreview() {
   );
 
   return <main className="shell">
-    <header className="topbar"><Link className="back" href="/">← Inicio</Link><span className="brand">KAMIKAZE</span></header>
+    <header className="topbar"><Link className="back" href="/"><Icon name="arrow-left" /> Inicio</Link><span className="brand">KAMIKAZE</span></header>
     <p className="eyebrow">ZONA DE CONTROL</p>
     <h1 className="screen-title">Monta la<br /><em>partida.</em></h1>
     <p className="screen-subtitle">Esta será la entrada exclusiva para quien dirige la música y la partida.</p>

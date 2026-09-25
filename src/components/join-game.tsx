@@ -5,6 +5,7 @@ import { useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 
 import { api } from "../../convex/_generated/api";
+import { Icon } from "./icons";
 
 type JoinGameProps = {
   initialCode?: string;
@@ -25,7 +26,7 @@ export default function JoinGame({ initialCode = "" }: JoinGameProps) {
   }
 
   return <section className="panel">
-    <p className="field-label">UNIRSE A LA PARTIDA</p>
+    <p className="field-label"><Icon name="ticket" /> UNIRSE A LA PARTIDA</p>
     <form onSubmit={onSubmit}>
       <label className="field-label" htmlFor="joinCode">CÓDIGO DE PARTIDA</label>
       <input
@@ -43,7 +44,7 @@ export default function JoinGame({ initialCode = "" }: JoinGameProps) {
       {code.length > 0 && !validCode ? <p role="alert">El código debe tener 6 caracteres.</p> : null}
       {validCode && availability === undefined ? <p role="status">Comprobando el código…</p> : null}
       {validCode && availability && !availability.available ? <p role="alert">No hay una partida disponible con este código. Comprueba el código o pide uno nuevo a la organización.</p> : null}
-      <button className="button" disabled={!availability?.available} type="submit">Continuar</button>
+      <button className="button" disabled={!availability?.available} type="submit"><Icon name="play" /> Continuar</button>
     </form>
   </section>;
 }

@@ -20,6 +20,7 @@ describe("host game status", () => {
     expect(markup).toContain('<strong>2</strong> jugadores en sala');
     expect(markup).toContain("AR");
     expect(markup).toContain("B");
+    expect(markup).toContain('data-icon="users"');
   });
 
   it("celebrates the winners in the results panel", () => {
@@ -29,5 +30,7 @@ describe("host game status", () => {
     expect(markup).toContain("Luis");
     expect(markup).toContain("Línea");
     expect(markup).toContain("Ana");
+    expect(markup).toContain('data-icon="trophy"');
+    expect(markup).toContain('data-icon="columns"');
   });
 });

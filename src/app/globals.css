@@ -32,6 +32,8 @@ a {
   text-decoration: none;
 }
 
+.icon { width: 1.1em; height: 1.1em; flex: 0 0 auto; vertical-align: -.14em; }
+
 .shell { width: min(100%, 760px); margin: 0 auto; padding: 28px 20px 48px; }
 .landing { min-height: 100vh; display: flex; flex-direction: column; }
 .brand { display: flex; align-items: center; gap: 9px; color: var(--ink); font-size: .75rem; font-weight: 800; letter-spacing: .14em; }
@@ -46,11 +48,11 @@ a {
 .entry-card:hover, .entry-card:focus-visible { transform: translateY(-3px); border-color: #fff8; outline: none; }
 .host-entry { background: linear-gradient(135deg, #4d226e, #26163f 68%); }
 .player-entry { background: linear-gradient(135deg, #084c60, #122f48 68%); }
-.entry-icon { color: var(--lime); font-size: 1.6rem; line-height: 1; }
+.entry-icon { width: 1.6rem; height: 1.6rem; color: var(--lime); }
 .player-entry .entry-icon { color: var(--pink); }
 .entry-card strong { font-size: 1.55rem; letter-spacing: -.04em; }
 .entry-card > span:not(.entry-icon):not(.entry-label):not(.entry-arrow) { max-width: 16rem; color: #d8cfe0; font-size: .9rem; line-height: 1.4; }
-.entry-arrow { position: absolute; right: 21px; bottom: 18px; color: var(--ink); font-size: 1.8rem; }
+.entry-arrow { position: absolute; right: 21px; bottom: 18px; width: 1.5rem; height: 1.5rem; color: var(--ink); }
 .preview-note { margin-top: auto; padding-top: 38px; text-align: center; }
 .topbar { display: flex; align-items: center; justify-content: space-between; padding: 24px 0 38px; }
 .back { color: var(--muted); font-size: .84rem; }
@@ -60,7 +62,7 @@ a {
 .panel + .panel { margin-top: 14px; }
 .field-label { display: block; margin-bottom: 10px; color: var(--muted); font-size: .72rem; font-weight: 750; letter-spacing: .1em; }
 .field { width: 100%; padding: 15px; border: 1px solid #ffffff2d; border-radius: 12px; background: #0f0a1ae6; color: var(--ink); font: inherit; }
-.button { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; margin-top: 14px; padding: 0 18px; border: 0; border-radius: 13px; background: var(--lime); color: #111; font: inherit; font-weight: 800; cursor: pointer; }
+.button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; margin-top: 14px; padding: 0 18px; border: 0; border-radius: 13px; background: var(--lime); color: #111; font: inherit; font-weight: 800; cursor: pointer; }
 .button:disabled { cursor: not-allowed; opacity: .58; }
 .status { display: inline-flex; padding: 6px 9px; border-radius: 999px; background: #c6ff4320; color: var(--lime); font-size: .68rem; font-weight: 800; letter-spacing: .08em; }
 .join-code { margin: 12px 0; color: var(--lime); font-family: var(--font-geist-mono); font-size: 2.1rem; font-weight: 800; letter-spacing: .16em; }
@@ -86,6 +88,7 @@ a {
 .admin-tabs { margin-top: 18px; }
 .admin-tablist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .admin-tab { min-height: 44px; border: 1px solid #ffffff24; border-radius: 12px; background: #ffffff0b; color: var(--muted); font: inherit; font-size: .78rem; font-weight: 800; letter-spacing: .04em; }
+.back, .field-label, .admin-tab, .result-winner span { display: inline-flex; align-items: center; gap: 6px; }.admin-tab { justify-content: center; }.modal-card h2 { display: flex; align-items: center; gap: 9px; }
 .admin-tab[aria-selected="true"] { border-color: var(--lime); background: #c6ff4320; color: var(--lime); }
 .admin-tab:disabled { cursor: not-allowed; opacity: .42; }
 .admin-tab:focus-visible { outline: 3px solid var(--pink); outline-offset: 2px; }
