@@ -28,7 +28,7 @@ export function AdminTabs({ activeTab, children, onTabChange, status }: AdminTab
 
   function selectTab(tabId: AdminTabId) {
     onTabChange(tabId);
-    window.requestAnimationFrame(() => document.getElementById(`admin-tab-${tabId}`)?.focus());
+    window.setTimeout(() => document.getElementById(`admin-tab-${tabId}`)?.focus(), 0);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
