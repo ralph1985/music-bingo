@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bingo Musical Kamikaze",
+  title: "Bingo Musical",
   description: "Bingo musical móvil con cartones digitales y partidas compartidas.",
 };
 

@@ -5,7 +5,7 @@ import { Icon } from "../components/icons";
 export default function Home() {
   return (
     <main className="landing shell">
-      <div className="brand"><span className="brand-dot" /> KAMIKAZE BINGO</div>
+      <div className="brand"><span className="brand-dot" /> BINGO MUSICAL</div>
       <section className="hero">
         <p className="eyebrow">BINGO MUSICAL · EDICIÓN DIGITAL</p>
         <h1>Que suene.<br /><em>Que marque.</em><br />Que gane.</h1>

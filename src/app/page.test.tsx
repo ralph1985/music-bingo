@@ -13,5 +13,6 @@ describe("Home", () => {
     expect(page).toContain("Entrar a jugar");
     expect(page).toContain('href="/play"');
     expect(page).toContain('data-icon="ticket"');
+    expect(page).toContain("BINGO MUSICAL");
   });
 });

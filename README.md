@@ -1,4 +1,4 @@
-# Bingo Musical Kamikaze
+# Bingo Musical
 
 Aplicación web móvil para jugar al bingo musical con cartones digitales, una partida compartida y música reproducida fuera de la web.
 
