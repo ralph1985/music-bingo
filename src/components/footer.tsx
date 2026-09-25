@@ -12,6 +12,10 @@ export default function Footer() {
           height={407}
         />
       </a>
+      <span aria-hidden="true">·</span>
+      <a className="footer-repository" href="https://github.com/ralph1985/music-bingo" target="_blank" rel="noreferrer">
+        Contribuir en GitHub
+      </a>
     </footer>
   );
 }
