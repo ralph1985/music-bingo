@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import PlaylistImport from "./playlist-import";
+import PlaylistImport, { shouldShowNewGameButton } from "./playlist-import";
 
 describe("PlaylistImport", () => {
   it("keeps game creation unavailable until a playlist has been reviewed", () => {
@@ -20,5 +20,11 @@ describe("PlaylistImport", () => {
     expect(markup).toContain("Preparar");
     expect(markup).toContain("LISTA DE CANCIONES");
     expect(markup).not.toContain("CANCIONES PENDIENTES");
+  });
+
+  it("only shows the new-game action in setup after a round is completed", () => {
+    expect(shouldShowNewGameButton("completed", "setup")).toBe(true);
+    expect(shouldShowNewGameButton("completed", "room")).toBe(false);
+    expect(shouldShowNewGameButton("waiting", "setup")).toBe(false);
   });
 });

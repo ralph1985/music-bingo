@@ -10,6 +10,10 @@ type Song = { title: string; artist: string };
 type ImportResult = { songs: Song[]; errors: { line: number; message: string }[] };
 type AdminPlayer = { id: string; name: string };
 
+export function shouldShowNewGameButton(status: AdminGameStatus | null, tab: AdminTabId): boolean {
+  return status === "completed" && tab === "setup";
+}
+
 function isSong(value: unknown): value is Song {
   return typeof value === "object" && value !== null
     && typeof (value as Song).title === "string"
@@ -216,7 +220,7 @@ export default function PlaylistImport() {
         setup: createdGame ? <div className="import-result">
           <p className="field-label">LISTA DE LA PARTIDA</p>
           <p><strong>{playlistSongs.length}</strong> canciones preparadas para esta ronda.</p>
-          <p>Usa <strong>Nueva partida</strong> en Sala al terminar para cargar otra lista.</p>
+          {shouldShowNewGameButton(createdGame.status, "setup") ? <button className="button" onClick={resetForNewGame} type="button">Nueva partida</button> : null}
         </div> : <>
           <p className="field-label">IMPORTAR CANCIONES</p>
           <p>Usa una canción por línea: <code>Título;Artista</code> o <code>Título - Artista</code>. También puedes pegar CSV.</p>
@@ -243,7 +247,6 @@ export default function PlaylistImport() {
           {createdGame.status === "waiting" ? <button className="button" disabled={pending || missingPlayersToStart > 0} onClick={startGame} type="button">Iniciar partida y cerrar inscripciones</button> : null}
           {createdGame.status !== "completed" ? <button className="button" disabled={pending} onClick={finishGame} type="button">Finalizar partida y ver resultados</button> : null}
           {createdGame.status !== "completed" ? <button className="button" disabled={pending} onClick={cancelGame} type="button">Cancelar partida</button> : null}
-          {createdGame.status === "completed" ? <button className="button" onClick={resetForNewGame} type="button">Nueva partida</button> : null}
         </div> : <p>Crea una partida en Preparar para abrir la sala.</p>,
         calls: createdGame?.status === "playing" || createdGame?.status === "completed" ? <div className="import-result">
           {lastCalledSong ? <section className="import-result"><p className="field-label">ÚLTIMA CANCIÓN ANUNCIADA</p><p><strong>{lastCalledSong.title}</strong> — {lastCalledSong.artist}</p></section> : <p>Aún no se ha anunciado ninguna canción.</p>}
