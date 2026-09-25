@@ -90,4 +90,5 @@ a {
 .admin-tab:disabled { cursor: not-allowed; opacity: .42; }
 .admin-tab:focus-visible { outline: 3px solid var(--pink); outline-offset: 2px; }
 .admin-tabpanel { margin-top: 14px; }
+@media (max-width: 420px) { .game-lifecycle ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }.game-lifecycle li { overflow-wrap: normal; } }
 @media (min-width: 620px) { .entry-grid, .admin-tablist { grid-template-columns: repeat(4, minmax(0, 1fr)); }.entry-grid { grid-template-columns: 1fr 1fr; }.hero { padding-top: 110px; } }
