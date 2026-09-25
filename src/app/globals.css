@@ -80,7 +80,7 @@ a {
 .site-footer a:focus-visible { outline: 2px solid var(--lime); }
 .site-footer img { width: 108px; height: auto; filter: brightness(0) invert(1); opacity: .9; }
 .playlist-input { display: block; min-height: 148px; margin-top: 0; resize: vertical; line-height: 1.45; }
-.import-result { margin-top: 20px; }.import-result ul { display: grid; gap: 8px; margin-top: 12px; list-style: none; }.import-result li { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: #ffffff0b; }.import-result li span { color: var(--muted); font-size: .8rem; }
+.import-result { margin-top: 20px; }.import-result ul { display: grid; gap: 8px; margin-top: 12px; list-style: none; }.import-result li { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: #ffffff0b; }.import-result li span { color: var(--muted); font-size: .8rem; }.spotify-import-feedback { margin-top: 14px; padding: 12px; border: 1px solid #ff4f9a; border-radius: 12px; background: #ff4f9a20; color: #ffd6e7; font-weight: 700; line-height: 1.4; }
 .admin-tabs { margin-top: 18px; }
 .admin-tablist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .admin-tab { min-height: 44px; border: 1px solid #ffffff24; border-radius: 12px; background: #ffffff0b; color: var(--muted); font: inherit; font-size: .78rem; font-weight: 800; letter-spacing: .04em; }

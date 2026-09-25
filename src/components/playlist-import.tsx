@@ -14,6 +14,10 @@ export function shouldShowNewGameButton(status: AdminGameStatus | null, tab: Adm
   return status === "completed" && tab === "setup";
 }
 
+export function SpotifyImportFeedback({ message }: { message: string | null }) {
+  return message ? <p className="spotify-import-feedback" role="alert" aria-live="assertive">{message}</p> : null;
+}
+
 function isSong(value: unknown): value is Song {
   return typeof value === "object" && value !== null
     && typeof (value as Song).title === "string"
@@ -33,6 +37,7 @@ export default function PlaylistImport() {
   const [players, setPlayers] = useState<AdminPlayer[]>([]);
   const [playlistText, setPlaylistText] = useState("");
   const [spotifyConnected, setSpotifyConnected] = useState(false);
+  const [spotifyError, setSpotifyError] = useState<string | null>(null);
   const [spotifyPlaylist, setSpotifyPlaylist] = useState("");
   const currentJoinCode = createdGame?.joinCode;
   const playerUrl = createdGame ? playerGameUrl(window.location.origin, createdGame.joinCode) : null;
@@ -116,27 +121,33 @@ export default function PlaylistImport() {
   async function importSpotifyPlaylist() {
     setPending(true);
     setError(null);
-    const response = await fetch("/api/admin/import-spotify-playlist", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ playlist: spotifyPlaylist }),
-    });
-    setPending(false);
-    if (!response.ok) {
-      const body = await response.json().catch(() => null) as { error?: unknown } | null;
-      setError(typeof body?.error === "string" ? body.error : "No se pudo importar la playlist de Spotify.");
-      return;
-    }
+    setSpotifyError(null);
+    try {
+      const response = await fetch("/api/admin/import-spotify-playlist", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ playlist: spotifyPlaylist }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null) as { error?: unknown } | null;
+        setSpotifyError(typeof body?.error === "string" ? body.error : "No se pudo importar la playlist de Spotify.");
+        return;
+      }
 
-    const body = await response.json() as { songs?: unknown };
-    const songs = Array.isArray(body.songs) ? body.songs.flatMap((song) => isSong(song) ? [song] : []) : [];
-    if (songs.length !== (Array.isArray(body.songs) ? body.songs.length : 0)) {
-      setError("Spotify devolvió una playlist inválida.");
-      return;
+      const body = await response.json() as { songs?: unknown };
+      const songs = Array.isArray(body.songs) ? body.songs.flatMap((song) => isSong(song) ? [song] : []) : [];
+      if (songs.length !== (Array.isArray(body.songs) ? body.songs.length : 0)) {
+        setSpotifyError("Spotify devolvió una playlist inválida.");
+        return;
+      }
+      setPlaylistText(songs.map((song) => `${song.title};${song.artist}`).join("\n"));
+      setResult({ errors: [], songs });
+      setSpotifyPlaylist("");
+    } catch {
+      setSpotifyError("No se pudo contactar con Spotify. Comprueba tu conexión e inténtalo de nuevo.");
+    } finally {
+      setPending(false);
     }
-    setPlaylistText(songs.map((song) => `${song.title};${song.artist}`).join("\n"));
-    setResult({ errors: [], songs });
-    setSpotifyPlaylist("");
   }
 
   async function startGame() {
@@ -268,6 +279,7 @@ export default function PlaylistImport() {
               <button className="button" disabled={pending || !spotifyPlaylist.trim()} onClick={importSpotifyPlaylist} type="button">{pending ? "Cargando…" : "Cargar canciones"}</button>
               <button className="button" disabled={pending} onClick={() => { void fetch("/api/admin/spotify/disconnect", { method: "POST" }).then(() => setSpotifyConnected(false)); }} type="button">Desconectar Spotify</button>
             </> : <a className="button" href="/api/admin/spotify/connect">Conectar Spotify</a>}
+            <SpotifyImportFeedback message={spotifyError} />
           </section>
           <form onSubmit={onSubmit}>
             <label className="field-label" htmlFor="playlist" style={{ marginTop: 18 }}>LISTA DE CANCIONES</label>
