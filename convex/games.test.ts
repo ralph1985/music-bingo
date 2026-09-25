@@ -2,7 +2,7 @@
 // @vitest-environment edge-runtime
 
 import { convexTest } from "convex-test";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
@@ -84,6 +84,31 @@ describe("game storage", () => {
       game: { joinCode: "FINALIZA", status: "completed" },
     });
     await expect(t.mutation(internal.games.createGame, { joinCode: "OTRA1", playlist })).resolves.not.toBeNull();
+  });
+
+  it("records the start and finish times used in the host results", async () => {
+    vi.useFakeTimers();
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+    vi.setSystemTime(new Date("2026-09-25T18:00:00.000Z"));
+    await t.mutation(internal.games.createGame, { joinCode: "HORARIOS", playlist });
+    await t.mutation(api.games.joinPlayer, { joinCode: "HORARIOS", name: "Uno", playerIdentity: "time-player-1" });
+    await t.mutation(api.games.joinPlayer, { joinCode: "HORARIOS", name: "Dos", playerIdentity: "time-player-2" });
+
+    await t.mutation(internal.games.startGame, { joinCode: "HORARIOS" });
+    vi.setSystemTime(new Date("2026-09-25T18:42:00.000Z"));
+    await t.mutation(internal.games.finishGame, { joinCode: "HORARIOS" });
+
+    await expect(t.query(internal.games.getByCode, { joinCode: "HORARIOS" })).resolves.toMatchObject({
+      startedAt: new Date("2026-09-25T18:00:00.000Z").getTime(),
+      completedAt: new Date("2026-09-25T18:42:00.000Z").getTime(),
+      status: "completed",
+    });
+    vi.useRealTimers();
   });
 
   it("blocks card changes and claims after the host finishes a game", async () => {

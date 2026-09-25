@@ -9,6 +9,7 @@ import QrCode from "./qr-code";
 type Song = { title: string; artist: string };
 type ImportResult = { songs: Song[]; errors: { line: number; message: string }[] };
 type AdminPlayer = { id: string; name: string };
+type RoomAction = "starting" | "finishing" | "cancelling" | null;
 
 export function shouldShowNewGameButton(status: AdminGameStatus | null, tab: AdminTabId): boolean {
   return status === "completed" && tab === "setup";
@@ -16,6 +17,32 @@ export function shouldShowNewGameButton(status: AdminGameStatus | null, tab: Adm
 
 export function SpotifyImportFeedback({ message }: { message: string | null }) {
   return message ? <p className="spotify-import-feedback" role="alert" aria-live="assertive">{message}</p> : null;
+}
+
+export function CancelGameConfirmation({ onCancel, onConfirm, pending }: { onCancel: () => void; onConfirm: () => void; pending: boolean }) {
+  return <section aria-labelledby="cancel-game-title" aria-modal="false" className="cancel-game-confirmation" role="alertdialog">
+    <p className="field-label" id="cancel-game-title">CANCELAR PARTIDA</p>
+    <p>Se cerrarán las inscripciones y esta ronda no podrá reanudarse.</p>
+    <button className="button button-danger" disabled={pending} onClick={onConfirm} type="button">{pending ? "Cancelando…" : "Cancelar partida definitivamente"}</button>
+    <button className="button button-secondary" disabled={pending} onClick={onCancel} type="button">Mantener partida</button>
+  </section>;
+}
+
+export function formatGameTimestamp(timestamp: number | null): string {
+  return timestamp === null ? "No registrado" : new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeStyle: "short" }).format(timestamp);
+}
+
+export function buildGameSummary({ bingoWinner, calledSongs, completedAt, joinCode, lineWinner, startedAt }: { bingoWinner: string; calledSongs: Song[]; completedAt: number | null; joinCode: string; lineWinner: string; startedAt: number | null }): string {
+  return [
+    `RESULTADOS · ${joinCode}`,
+    `Inicio: ${formatGameTimestamp(startedAt)}`,
+    `Fin: ${formatGameTimestamp(completedAt)}`,
+    `Línea: ${lineWinner}`,
+    `¡Bingo!: ${bingoWinner}`,
+    "",
+    "Canciones anunciadas:",
+    ...calledSongs.map((song) => `${song.title} — ${song.artist}`),
+  ].join("\n");
 }
 
 function isSong(value: unknown): value is Song {
@@ -27,6 +54,9 @@ function isSong(value: unknown): value is Song {
 export default function PlaylistImport() {
   const [activeTab, setActiveTab] = useState<AdminTabId>("setup");
   const [calledSongIds, setCalledSongIds] = useState<string[]>([]);
+  const [cancelConfirmationOpen, setCancelConfirmationOpen] = useState(false);
+  const [completedAt, setCompletedAt] = useState<number | null>(null);
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [createdGame, setCreatedGame] = useState<{ joinCode: string; status: AdminGameStatus } | null>(null);
   const [dismissedCompletedGameCode, setDismissedCompletedGameCode] = useState<string | null>(null);
   const [fullCardWinnerPlayerId, setFullCardWinnerPlayerId] = useState<string | null>(null);
@@ -39,13 +69,15 @@ export default function PlaylistImport() {
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [spotifyError, setSpotifyError] = useState<string | null>(null);
   const [spotifyPlaylist, setSpotifyPlaylist] = useState("");
+  const [roomAction, setRoomAction] = useState<RoomAction>(null);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
   const currentJoinCode = createdGame?.joinCode;
   const playerUrl = createdGame ? playerGameUrl(window.location.origin, createdGame.joinCode) : null;
 
   useEffect(() => {
     const url = currentJoinCode ? `/api/admin/games?joinCode=${encodeURIComponent(currentJoinCode)}` : "/api/admin/games";
     const loadGame = () => fetch(url, { cache: "no-store" })
-      .then(async (response) => response.ok ? await response.json() as { calledSongIds?: unknown; fullCardWinnerPlayerId?: unknown; joinCode?: unknown; lineWinnerPlayerId?: unknown; players?: unknown; playlist?: unknown; status?: unknown } : null)
+      .then(async (response) => response.ok ? await response.json() as { calledSongIds?: unknown; completedAt?: unknown; fullCardWinnerPlayerId?: unknown; joinCode?: unknown; lineWinnerPlayerId?: unknown; players?: unknown; playlist?: unknown; startedAt?: unknown; status?: unknown } : null)
       .then((game) => {
         if (typeof game?.joinCode === "string" && (game.status === "waiting" || game.status === "playing" || game.status === "completed") && !(game.status === "completed" && game.joinCode === dismissedCompletedGameCode)) {
           setCreatedGame({ joinCode: game.joinCode, status: game.status });
@@ -55,8 +87,10 @@ export default function PlaylistImport() {
           if (Array.isArray(game.calledSongIds) && game.calledSongIds.every((songId) => typeof songId === "string")) {
             setCalledSongIds(game.calledSongIds);
           }
+          setCompletedAt(typeof game.completedAt === "number" ? game.completedAt : null);
           setFullCardWinnerPlayerId(typeof game.fullCardWinnerPlayerId === "string" ? game.fullCardWinnerPlayerId : null);
           setLineWinnerPlayerId(typeof game.lineWinnerPlayerId === "string" ? game.lineWinnerPlayerId : null);
+          setStartedAt(typeof game.startedAt === "number" ? game.startedAt : null);
           if (Array.isArray(game.players)) {
             setPlayers(game.players.flatMap((player) => typeof player === "object" && player !== null && typeof (player as { id?: unknown; name?: unknown }).id === "string" && typeof (player as { id?: unknown; name?: unknown }).name === "string" ? [{ id: (player as { id: string }).id, name: (player as { name: string }).name }] : []));
           }
@@ -154,17 +188,24 @@ export default function PlaylistImport() {
     if (!createdGame) return;
     setPending(true);
     setError(null);
-    const response = await fetch("/api/admin/games/start", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ joinCode: createdGame.joinCode }),
-    });
-    setPending(false);
-    if (!response.ok) {
-      setError("No se pudo iniciar la partida.");
-      return;
+    setRoomAction("starting");
+    try {
+      const response = await fetch("/api/admin/games/start", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ joinCode: createdGame.joinCode }),
+      });
+      if (!response.ok) {
+        setError("No se pudo iniciar la partida.");
+        return;
+      }
+      setCreatedGame({ ...createdGame, status: "playing" });
+    } catch {
+      setError("No se pudo contactar con la sala. Inténtalo de nuevo.");
+    } finally {
+      setPending(false);
+      setRoomAction(null);
     }
-    setCreatedGame({ ...createdGame, status: "playing" });
   }
 
   async function callSong(songId: string) {
@@ -196,42 +237,58 @@ export default function PlaylistImport() {
 
     setPending(true);
     setError(null);
-    const response = await fetch("/api/admin/games", {
-      method: "DELETE",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ joinCode: createdGame.joinCode }),
-    });
-    setPending(false);
+    setRoomAction("cancelling");
+    try {
+      const response = await fetch("/api/admin/games", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ joinCode: createdGame.joinCode }),
+      });
+      if (!response.ok) {
+        setError("No se pudo cancelar la partida.");
+        return;
+      }
 
-    if (!response.ok) {
-      setError("No se pudo cancelar la partida.");
-      return;
+      setCancelConfirmationOpen(false);
+      setCompletedAt(null);
+      setCreatedGame(null);
+      setCalledSongIds([]);
+      setFullCardWinnerPlayerId(null);
+      setLineWinnerPlayerId(null);
+      setPlayers([]);
+      setStartedAt(null);
+      setActiveTab("setup");
+    } catch {
+      setError("No se pudo contactar con la sala. Inténtalo de nuevo.");
+    } finally {
+      setPending(false);
+      setRoomAction(null);
     }
-
-    setCreatedGame(null);
-    setCalledSongIds([]);
-    setFullCardWinnerPlayerId(null);
-    setLineWinnerPlayerId(null);
-    setPlayers([]);
-    setActiveTab("setup");
   }
 
   async function finishGame() {
     if (!createdGame) return;
     setPending(true);
     setError(null);
-    const response = await fetch("/api/admin/games/finish", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ joinCode: createdGame.joinCode }),
-    });
-    setPending(false);
-    if (!response.ok) {
-      setError("No se pudo finalizar la partida.");
-      return;
+    setRoomAction("finishing");
+    try {
+      const response = await fetch("/api/admin/games/finish", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ joinCode: createdGame.joinCode }),
+      });
+      if (!response.ok) {
+        setError("No se pudo finalizar la partida.");
+        return;
+      }
+      setCreatedGame({ ...createdGame, status: "completed" });
+      setActiveTab("results");
+    } catch {
+      setError("No se pudo contactar con la sala. Inténtalo de nuevo.");
+    } finally {
+      setPending(false);
+      setRoomAction(null);
     }
-    setCreatedGame({ ...createdGame, status: "completed" });
-    setActiveTab("results");
   }
 
   function winnerName(playerId: string | null): string {
@@ -244,12 +301,41 @@ export default function PlaylistImport() {
     }
     setCreatedGame(null);
     setCalledSongIds([]);
+    setCancelConfirmationOpen(false);
+    setCompletedAt(null);
+    setCopyFeedback(null);
     setFullCardWinnerPlayerId(null);
     setLineWinnerPlayerId(null);
     setPlayers([]);
     setResult(null);
+    setStartedAt(null);
     setPlaylistText("");
     setActiveTab("setup");
+  }
+
+  async function copyText(text: string, successMessage: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyFeedback(successMessage);
+    } catch {
+      setCopyFeedback("No se pudo copiar automáticamente. Mantén pulsado el texto para seleccionarlo.");
+    }
+  }
+
+  async function copyJoinCode() {
+    if (createdGame) await copyText(createdGame.joinCode, "Código de partida copiado.");
+  }
+
+  async function copyGameSummary() {
+    if (!createdGame) return;
+    await copyText(buildGameSummary({
+      bingoWinner: winnerName(fullCardWinnerPlayerId),
+      calledSongs: calledSongs.map(({ song }) => song),
+      completedAt,
+      joinCode: createdGame.joinCode,
+      lineWinner: winnerName(lineWinnerPlayerId),
+      startedAt,
+    }), "Resumen de resultados copiado.");
   }
 
   const playlistSongs = result?.songs.map((song, index) => ({ song, songId: `song-${index + 1}` })) ?? [];
@@ -293,23 +379,27 @@ export default function PlaylistImport() {
             {result.errors.length === 0 && result.songs.length >= 24 ? <button className="button" type="button" disabled={pending} onClick={createGame}>{pending ? "Creando…" : "Crear partida"}</button> : <p role="alert">Añade {Math.max(0, 24 - result.songs.length)} canción{result.songs.length === 23 ? "" : "es"} válida{result.songs.length === 23 ? "" : "s"} más para crear la partida.</p>}
           </div> : null}
         </>,
-        room: createdGame ? <div className="import-result" role="status">
+        room: createdGame ? <div className="import-result">
           <p>Partida creada con código <strong>{createdGame.joinCode}</strong>.</p>
           <p>{createdGame.status === "waiting" ? "Inscripciones abiertas." : createdGame.status === "playing" ? "Partida en curso: inscripciones cerradas." : "Partida finalizada. Consulta los resultados."}</p>
           <p>{players.length} jugador{players.length === 1 ? "" : "es"} en sala{players.length ? `: ${players.map((player) => player.name).join(", ")}` : "."}</p>
           {createdGame.status === "waiting" && missingPlayersToStart > 0 ? <p role="alert">Falta{missingPlayersToStart === 1 ? "" : "n"} {missingPlayersToStart} jugador{missingPlayersToStart === 1 ? "" : "es"} para iniciar la partida. El mínimo es 2.</p> : null}
+          {roomAction ? <p className="room-action-feedback" role="status">{roomAction === "starting" ? "Iniciando partida…" : roomAction === "finishing" ? "Finalizando partida…" : "Cancelando partida…"}</p> : null}
           <a className="button" href={playerUrl ?? `/play/${createdGame.joinCode}`}>Abrir enlace de jugadores</a>
+          <button className="button button-secondary" disabled={pending} onClick={() => { void copyJoinCode(); }} type="button">Copiar código de partida</button>
           {playerUrl ? <QrCode url={playerUrl} /> : null}
-          {createdGame.status === "waiting" ? <button className="button" disabled={pending || missingPlayersToStart > 0} onClick={startGame} type="button">Iniciar partida y cerrar inscripciones</button> : null}
-          {createdGame.status !== "completed" ? <button className="button" disabled={pending} onClick={finishGame} type="button">Finalizar partida y ver resultados</button> : null}
-          {createdGame.status !== "completed" ? <button className="button" disabled={pending} onClick={cancelGame} type="button">Cancelar partida</button> : null}
+          {createdGame.status === "waiting" ? <button className="button" disabled={pending || missingPlayersToStart > 0} onClick={startGame} type="button">{roomAction === "starting" ? "Iniciando…" : "Iniciar partida y cerrar inscripciones"}</button> : null}
+          {createdGame.status !== "completed" ? <button className="button" disabled={pending} onClick={finishGame} type="button">{roomAction === "finishing" ? "Finalizando…" : "Finalizar partida y ver resultados"}</button> : null}
+          {createdGame.status !== "completed" && !cancelConfirmationOpen ? <button className="button button-danger" disabled={pending} onClick={() => setCancelConfirmationOpen(true)} type="button">Cancelar partida</button> : null}
+          {createdGame.status !== "completed" && cancelConfirmationOpen ? <CancelGameConfirmation onCancel={() => setCancelConfirmationOpen(false)} onConfirm={() => { void cancelGame(); }} pending={pending} /> : null}
+          {copyFeedback ? <p className="copy-feedback" role="status">{copyFeedback}</p> : null}
         </div> : <p>Crea una partida en Preparar para abrir la sala.</p>,
         calls: createdGame?.status === "playing" || createdGame?.status === "completed" ? <div className="import-result">
           {lastCalledSong ? <section className="import-result"><p className="field-label">ÚLTIMA CANCIÓN ANUNCIADA</p><p><strong>{lastCalledSong.title}</strong> — {lastCalledSong.artist}</p></section> : <p>Aún no se ha anunciado ninguna canción.</p>}
           {calledSongs.length > 0 ? <section className="import-result"><p className="field-label">HISTORIAL DE CANCIONES</p><ol>{calledSongs.map(({ song, songId }) => <li key={`called-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol></section> : null}
           {createdGame.status === "playing" ? <><p className="field-label" style={{ marginTop: 18 }}>CANCIONES PENDIENTES</p>{pendingSongs.map(({ song, songId }) => <button className="button" disabled={pending} key={songId} onClick={() => callSong(songId)} type="button">{song.title} — {song.artist}</button>)}</> : null}
         </div> : <p>Inicia la partida para empezar a anunciar canciones.</p>,
-        results: createdGame?.status === "completed" ? <section className="import-result"><p className="field-label">RESULTADOS</p><p>Línea: <strong>{winnerName(lineWinnerPlayerId)}</strong></p><p>¡Bingo!: <strong>{winnerName(fullCardWinnerPlayerId)}</strong></p><p>{calledSongs.length} canciones anunciadas en total.</p></section> : <p>Los resultados estarán disponibles al finalizar la partida.</p>,
+        results: createdGame?.status === "completed" ? <section className="import-result"><p className="field-label">RESULTADOS</p><p>Inicio: <strong>{formatGameTimestamp(startedAt)}</strong></p><p>Fin: <strong>{formatGameTimestamp(completedAt)}</strong></p><p>Línea: <strong>{winnerName(lineWinnerPlayerId)}</strong></p><p>¡Bingo!: <strong>{winnerName(fullCardWinnerPlayerId)}</strong></p><p>{calledSongs.length} canciones anunciadas en total.</p>{calledSongs.length > 0 ? <ol className="result-song-list">{calledSongs.map(({ song, songId }) => <li key={`result-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol> : null}<button className="button button-secondary" onClick={() => { void copyGameSummary(); }} type="button">Copiar resumen</button>{copyFeedback ? <p className="copy-feedback" role="status">{copyFeedback}</p> : null}</section> : <p>Los resultados estarán disponibles al finalizar la partida.</p>,
       }}
     </AdminTabs>
   </section>;

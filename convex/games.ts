@@ -88,6 +88,7 @@ export const callSong = internalMutation({
 
     await ctx.db.patch("games", game._id, {
       calledSongIds: [...game.calledSongIds, args.songId],
+      ...(game.status === "waiting" ? { startedAt: Date.now() } : {}),
       status: game.status === "waiting" ? "playing" : game.status,
     });
   },
@@ -113,7 +114,7 @@ export const startGame = internalMutation({
       throw new Error(`A game requires at least ${MIN_GAME_PLAYERS} players to start.`);
     }
 
-    await ctx.db.patch("games", game._id, { status: "playing" });
+    await ctx.db.patch("games", game._id, { startedAt: Date.now(), status: "playing" });
     return null;
   },
 });
@@ -147,7 +148,7 @@ export const finishGame = internalMutation({
       return null;
     }
 
-    await ctx.db.patch("games", game._id, { status: "completed" });
+    await ctx.db.patch("games", game._id, { completedAt: Date.now(), status: "completed" });
     return null;
   },
 });
@@ -374,6 +375,7 @@ export const claimFullCard = mutation({
     }
 
     await ctx.db.patch("games", game._id, {
+      completedAt: Date.now(),
       fullCardWinnerPlayerId: player._id,
       status: "completed",
     });

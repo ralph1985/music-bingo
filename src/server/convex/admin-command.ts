@@ -137,7 +137,7 @@ export async function getActiveGameCommand({
   fetcher = fetch,
   joinCode,
   secret,
-}: Pick<CreateGameCommandInput, "cloudUrl" | "fetcher" | "secret"> & { joinCode?: string }): Promise<{ calledSongIds: string[]; fullCardWinnerPlayerId: string | null; joinCode: string; lineWinnerPlayerId: string | null; players: { id: string; name: string }[]; playlist: Song[]; status: string } | null> {
+}: Pick<CreateGameCommandInput, "cloudUrl" | "fetcher" | "secret"> & { joinCode?: string }): Promise<{ calledSongIds: string[]; completedAt: number | null; fullCardWinnerPlayerId: string | null; joinCode: string; lineWinnerPlayerId: string | null; players: { id: string; name: string }[]; playlist: Song[]; startedAt: number | null; status: string } | null> {
   const url = new URL(`${deriveConvexSiteUrl(cloudUrl)}/admin/games`);
   if (joinCode) url.searchParams.set("joinCode", joinCode);
   const response = await fetcher(url.toString(), {
@@ -149,7 +149,7 @@ export async function getActiveGameCommand({
     throw new ConvexCommandError(response.status);
   }
 
-  const body = await response.json() as { calledSongIds?: unknown; fullCardWinnerPlayerId?: unknown; joinCode?: unknown; lineWinnerPlayerId?: unknown; players?: unknown; playlist?: unknown; status?: unknown };
+  const body = await response.json() as { calledSongIds?: unknown; completedAt?: unknown; fullCardWinnerPlayerId?: unknown; joinCode?: unknown; lineWinnerPlayerId?: unknown; players?: unknown; playlist?: unknown; startedAt?: unknown; status?: unknown };
   if (typeof body.joinCode !== "string" || !Array.isArray(body.playlist) || !Array.isArray(body.calledSongIds) || !Array.isArray(body.players)) {
     return null;
   }
@@ -157,7 +157,7 @@ export async function getActiveGameCommand({
   const calledSongIds = body.calledSongIds.filter((songId): songId is string => typeof songId === "string");
   const players = body.players.flatMap((player) => typeof player === "object" && player !== null && typeof (player as { id?: unknown }).id === "string" && typeof (player as { name?: unknown }).name === "string" ? [{ id: (player as { id: string }).id, name: (player as { name: string }).name }] : []);
   return playlist.length === body.playlist.length && players.length === body.players.length
-    ? { calledSongIds, fullCardWinnerPlayerId: typeof body.fullCardWinnerPlayerId === "string" ? body.fullCardWinnerPlayerId : null, joinCode: body.joinCode, lineWinnerPlayerId: typeof body.lineWinnerPlayerId === "string" ? body.lineWinnerPlayerId : null, players, playlist, status: typeof body.status === "string" ? body.status : "waiting" }
+    ? { calledSongIds, completedAt: typeof body.completedAt === "number" ? body.completedAt : null, fullCardWinnerPlayerId: typeof body.fullCardWinnerPlayerId === "string" ? body.fullCardWinnerPlayerId : null, joinCode: body.joinCode, lineWinnerPlayerId: typeof body.lineWinnerPlayerId === "string" ? body.lineWinnerPlayerId : null, players, playlist, startedAt: typeof body.startedAt === "number" ? body.startedAt : null, status: typeof body.status === "string" ? body.status : "waiting" }
     : null;
 }
 

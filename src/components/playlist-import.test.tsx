@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import PlaylistImport, { shouldShowNewGameButton, SpotifyImportFeedback } from "./playlist-import";
+import PlaylistImport, { buildGameSummary, CancelGameConfirmation, shouldShowNewGameButton, SpotifyImportFeedback } from "./playlist-import";
 
 describe("PlaylistImport", () => {
   it("keeps game creation unavailable until a playlist has been reviewed", () => {
@@ -35,5 +35,31 @@ describe("PlaylistImport", () => {
     expect(markup).toContain('role="alert"');
     expect(markup).toContain('aria-live="assertive"');
     expect(markup).toContain("No se encontró esa playlist de Spotify.");
+  });
+
+  it("requires explicit confirmation before cancelling a round", () => {
+    const markup = renderToStaticMarkup(<CancelGameConfirmation onCancel={() => undefined} onConfirm={() => undefined} pending={false} />);
+
+    expect(markup).toContain('role="alertdialog"');
+    expect(markup).toContain("Cancelar partida definitivamente");
+    expect(markup).toContain("Mantener partida");
+  });
+
+  it("builds a copyable results summary with the called songs and timestamps", () => {
+    const summary = buildGameSummary({
+      bingoWinner: "Luis",
+      calledSongs: [{ artist: "ABBA", title: "Dancing Queen" }],
+      completedAt: Date.UTC(2026, 8, 25, 18, 42),
+      joinCode: "FIESTA",
+      lineWinner: "Ana",
+      startedAt: Date.UTC(2026, 8, 25, 18, 0),
+    });
+
+    expect(summary).toContain("RESULTADOS · FIESTA");
+    expect(summary).toContain("Línea: Ana");
+    expect(summary).toContain("¡Bingo!: Luis");
+    expect(summary).toContain("Dancing Queen — ABBA");
+    expect(summary).toContain("Inicio:");
+    expect(summary).toContain("Fin:");
   });
 });

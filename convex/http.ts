@@ -87,11 +87,13 @@ http.route({
       : await ctx.runQuery(internal.games.getActiveAdminGame, {});
     return Response.json(game ? {
       calledSongIds: game.game.calledSongIds,
+      completedAt: game.game.completedAt ?? null,
       fullCardWinnerPlayerId: game.game.fullCardWinnerPlayerId,
       joinCode: game.game.joinCode,
       lineWinnerPlayerId: game.game.lineWinnerPlayerId,
       players: game.players,
       playlist: game.game.playlist,
+      startedAt: game.game.startedAt ?? null,
       status: game.game.status,
     } : {});
   }),

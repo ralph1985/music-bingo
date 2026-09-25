@@ -10,10 +10,12 @@ const songValidator = v.object({
 export default defineSchema({
   games: defineTable({
     calledSongIds: v.array(v.string()),
+    completedAt: v.optional(v.number()),
     fullCardWinnerPlayerId: v.union(v.string(), v.null()),
     joinCode: v.string(),
     lineWinnerPlayerId: v.union(v.string(), v.null()),
     playlist: v.array(songValidator),
+    startedAt: v.optional(v.number()),
     status: v.union(
       v.literal("waiting"),
       v.literal("playing"),
