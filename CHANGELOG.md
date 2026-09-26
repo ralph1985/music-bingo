@@ -20,6 +20,10 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 - Dependencias directas fijadas a versiones exactas y espera mínima antes de aceptar actualizaciones de Dependabot.
 - Generación explícita de tipos de rutas de Next.js antes del typecheck.
 
+### Corregido
+
+- Favicon sustituido por el icono de marca de Bingo Musical en lugar del icono predeterminado.
+
 ## [0.1.0] - 2026-09-26
 
 ### Añadido

@@ -7,6 +7,16 @@ test("shows the public entry point", async ({ page }) => {
   await expect(page.getByRole("link", { name: /organizar partida/i })).toBeVisible();
 });
 
+test("serves the branded favicon", async ({ page, request }) => {
+  await page.goto("/");
+
+  await expect(page.locator('link[rel="icon"]').first()).toHaveAttribute("href", /favicon\.ico/);
+  const response = await request.get("/favicon.ico");
+
+  expect(response.ok()).toBe(true);
+  expect(response.headers()["content-type"]).toContain("icon");
+});
+
 test("shows the staging environment marker", async ({ page }) => {
   await page.goto("/");
 
