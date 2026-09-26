@@ -47,6 +47,14 @@ Convex agent skills for common tasks can be installed by running
 - El staging es accesible públicamente y no debe recibir datos reales de producción ni endpoints temporales de prueba. Usa datos sintéticos y conserva los secretos solo en Vercel/Convex.
 - `ADMIN_COMMAND_SECRET` debe estar presente y coincidir entre el entorno Vercel que ejecuta la aplicación y el despliegue Convex correspondiente. Nunca imprimas su valor.
 
+## Versiones y releases
+
+- Mantén los cambios futuros en `CHANGELOG.md` bajo `Unreleased` mientras estén en `develop`.
+- Al preparar una release aprobada, mueve los cambios incluidos a `## [x.y.z] - YYYY-MM-DD`, usando la misma versión en `package.json` y en el tag `v<x.y.z>`.
+- Aplica Versionado Semántico: `patch` para correcciones compatibles, `minor` para capacidades compatibles nuevas y `major` para cambios incompatibles.
+- Publica el tag sobre el commit exacto de `main` que está en producción y crea la GitHub Release desde ese tag; nunca etiquetes `develop` como si fuera producción.
+- Verifica después que el tag apunta al SHA esperado y que la release no es draft ni prerelease. No crees tags ni releases sin petición expresa del usuario.
+
 ## Invariantes del juego
 
 - Un despliegue solo puede tener una partida en `waiting` o `playing`. Las partidas terminales no deben bloquear una nueva.
