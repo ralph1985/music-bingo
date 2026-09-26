@@ -38,6 +38,26 @@ Convex agent skills for common tasks can be installed by running
 - Para cualquier cambio de Convex, lee primero `convex/_generated/ai/guidelines.md`. Mantén los comandos del anfitrión mediados por servidor y las funciones de Convex internas, salvo que se diseñe expresamente una API pública para jugadores.
 - No leas, imprimas, subas ni inventes valores de secretos `.env*`, Vercel, Convex o Spotify. Documenta solamente nombres y presencia de variables.
 
+## Flujo de ramas y entornos
+
+- `main` es producción y está protegida: nunca hagas push directo; los cambios llegan mediante pull request.
+- `develop` es la rama de integración y staging. Crea las ramas de trabajo desde `develop`, integra ahí los cambios verificados y prepara la promoción a producción mediante un pull request de `develop` hacia `main`.
+- Vercel despliega automáticamente `develop` en `https://develop.bingo.conquense.dev` y `main` en producción; las demás ramas no tienen despliegue automático.
+- El backend persistente de staging es el despliegue Convex `cool-wren-187`; producción usa otro despliegue. Antes de cualquier comando que pueda afectar Convex, identifica explícitamente el destino y no uses producción sin aprobación expresa.
+- El staging es accesible públicamente y no debe recibir datos reales de producción ni endpoints temporales de prueba. Usa datos sintéticos y conserva los secretos solo en Vercel/Convex.
+- `ADMIN_COMMAND_SECRET` debe estar presente y coincidir entre el entorno Vercel que ejecuta la aplicación y el despliegue Convex correspondiente. Nunca imprimas su valor.
+
+## Versiones y releases
+
+- Mantén los cambios futuros en `CHANGELOG.md` bajo `Unreleased` mientras estén en `develop`.
+- Al preparar una release aprobada, mueve los cambios incluidos a `## [x.y.z] - YYYY-MM-DD`, usando la misma versión en `package.json` y en el tag `v<x.y.z>`.
+- Aplica Versionado Semántico: `patch` para correcciones compatibles, `minor` para capacidades compatibles nuevas y `major` para cambios incompatibles.
+- Publica el tag sobre el commit exacto de `main` que está en producción y crea la GitHub Release desde ese tag; nunca etiquetes `develop` como si fuera producción.
+- Verifica después que el tag apunta al SHA esperado y que la release no es draft ni prerelease. No crees tags ni releases sin petición expresa del usuario.
+- Mantén las dependencias directas de `package.json` fijadas a versiones exactas, sin rangos `^` o `~`; conserva `pnpm-lock.yaml` sincronizado.
+- Las actualizaciones normales de Dependabot deben entrar primero por `develop`; el workflow de CI debe pasar antes de promover cambios a `main`.
+- Dependabot espera como mínimo 7 días para actualizaciones minor y patch, y 30 días para major; las actualizaciones de seguridad no se retrasan por este cooldown.
+
 ## Invariantes del juego
 
 - Un despliegue solo puede tener una partida en `waiting` o `playing`. Las partidas terminales no deben bloquear una nueva.

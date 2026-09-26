@@ -1,0 +1,48 @@
+version: 2
+
+updates:
+  # Las actualizaciones normales se prueban primero en develop/staging.
+  # Las actualizaciones de seguridad siguen las reglas de GitHub y pueden
+  # dirigirse a main porque Dependabot no aplica target-branch a seguridad.
+  - package-ecosystem: npm
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Europe/Madrid
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    cooldown:
+      semver-major-days: 30
+      semver-minor-days: 7
+      semver-patch-days: 7
+    groups:
+      production-minor-patch:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+      development-minor-patch:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+
+  # Mantiene las acciones de CI actualizadas sin mezclar sus PRs con npm.
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:30"
+      timezone: Europe/Madrid
+    open-pull-requests-limit: 3
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns:
+          - "*"
