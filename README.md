@@ -4,6 +4,8 @@ Aplicación web móvil para organizar y jugar un bingo musical presencial. La pe
 
 Producción: [bingo.conquense.dev](https://bingo.conquense.dev)
 
+Historial de cambios: [CHANGELOG.md](CHANGELOG.md)
+
 ## Qué incluye
 
 - Dos experiencias separadas: [administración](#organizar-una-partida) y [jugadores](#jugar-desde-el-móvil).
