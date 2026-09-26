@@ -2,9 +2,21 @@
 
 Todos los cambios relevantes de Bingo Musical se documentan en este archivo.
 
-El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones seguirán [Versionado Semántico](https://semver.org/lang/es/). El repositorio todavía no tiene tags ni releases publicados, por lo que el historial actual permanece bajo `Unreleased` hasta preparar la primera versión.
+El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones siguen [Versionado Semántico](https://semver.org/lang/es/). El repositorio todavía no tiene un tag ni una release de GitHub; la versión publicada en `main` corresponde a `0.1.0` según `package.json`.
 
 ## [Unreleased]
+
+### Añadido
+
+- Marca visible `STAGING · develop · No es producción` en entornos no productivos.
+
+### Cambiado
+
+- Rama `develop` como integración y staging persistente en Vercel y Convex.
+- Despliegue automático de `develop` en Vercel, manteniendo `main` como producción.
+- Flujo de trabajo documentado para ramas, staging y pull requests hacia `main`.
+
+## [0.1.0] - 2026-09-26
 
 ### Añadido
 
@@ -18,8 +30,6 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 - Autenticación del panel de administración mediante sesión firmada.
 - Estado de jugador redactado para no exponer cartones ajenos ni el historial completo del anfitrión.
 - Iconos SVG, código QR, favicon de la aplicación y atribución a conquense.dev.
-- Rama `develop` con staging persistente en Vercel y Convex.
-- Marca visible `STAGING · develop · No es producción` en entornos no productivos.
 
 ### Cambiado
 
@@ -27,7 +37,6 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 - Interfaz móvil ajustada para conservar el flujo de juego y evitar overflow horizontal.
 - Feedback visible para estados de partida, marcas, reclamaciones, resultados e importación de Spotify.
 - Acciones administrativas mediadas por rutas de servidor y funciones internas de Convex.
-- Flujo de contribución documentado alrededor de `develop` como integración y `main` como producción protegida por pull requests.
 
 ### Corregido
 
@@ -48,6 +57,5 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 - Comandos administrativos protegidos por un secreto servidor a servidor entre Next.js y Convex.
 - Funciones administrativas mantenidas como funciones internas de Convex.
 - Respuestas de jugador limitadas a los datos necesarios para jugar.
-- `main` protegida para aceptar cambios únicamente mediante pull requests.
 
-<!-- En la primera release, mueve los cambios finalizados a una sección con versión y fecha. -->
+[unreleased]: https://github.com/ralph1985/music-bingo/compare/main...develop
