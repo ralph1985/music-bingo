@@ -38,6 +38,15 @@ Convex agent skills for common tasks can be installed by running
 - Para cualquier cambio de Convex, lee primero `convex/_generated/ai/guidelines.md`. Mantén los comandos del anfitrión mediados por servidor y las funciones de Convex internas, salvo que se diseñe expresamente una API pública para jugadores.
 - No leas, imprimas, subas ni inventes valores de secretos `.env*`, Vercel, Convex o Spotify. Documenta solamente nombres y presencia de variables.
 
+## Flujo de ramas y entornos
+
+- `main` es producción y está protegida: nunca hagas push directo; los cambios llegan mediante pull request.
+- `develop` es la rama de integración y staging. Crea las ramas de trabajo desde `develop`, integra ahí los cambios verificados y prepara la promoción a producción mediante un pull request de `develop` hacia `main`.
+- Vercel despliega automáticamente `develop` en `https://develop.bingo.conquense.dev` y `main` en producción; las demás ramas no tienen despliegue automático.
+- El backend persistente de staging es el despliegue Convex `cool-wren-187`; producción usa otro despliegue. Antes de cualquier comando que pueda afectar Convex, identifica explícitamente el destino y no uses producción sin aprobación expresa.
+- El staging es accesible públicamente y no debe recibir datos reales de producción ni endpoints temporales de prueba. Usa datos sintéticos y conserva los secretos solo en Vercel/Convex.
+- `ADMIN_COMMAND_SECRET` debe estar presente y coincidir entre el entorno Vercel que ejecuta la aplicación y el despliegue Convex correspondiente. Nunca imprimas su valor.
+
 ## Invariantes del juego
 
 - Un despliegue solo puede tener una partida en `waiting` o `playing`. Las partidas terminales no deben bloquear una nueva.
