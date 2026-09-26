@@ -8,6 +8,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 
 ### Añadido
 
+- Selección fija de uno a cuatro cartones por jugador, con marcas independientes y navegación móvil entre cartones.
 - Marca visible `STAGING · develop · No es producción` en entornos no productivos.
 - CI de GitHub Actions con tests, typecheck, lint, build y smoke tests Playwright contra staging.
 - Configuración de Dependabot para actualizar dependencias y acciones de GitHub de forma controlada.
@@ -23,6 +24,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 
 ### Corregido
 
+- Validación de línea vertical y bingo sobre cualquiera de los cartones del jugador, conservando la privacidad de los demás participantes.
 - Favicon sustituido por el icono de marca de Bingo Musical en lugar del icono predeterminado.
 
 ## [0.1.0] - 2026-09-26

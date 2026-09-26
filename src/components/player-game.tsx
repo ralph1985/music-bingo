@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { type FormEvent, useState, useSyncExternalStore } from "react";
 
 import { api } from "../../convex/_generated/api";
+import { MAX_CARDS_PER_PLAYER } from "../../shared/card-config";
 import { loadLocalGame, saveLocalGame } from "../storage/local-storage";
 import { Icon } from "./icons";
 
@@ -57,6 +58,8 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
   );
   const recoveredGame = savedGame?.gameId === joinCode ? savedGame : null;
   const [enteredName, setEnteredName] = useState("");
+  const [cardCount, setCardCount] = useState(1);
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
   const name = recoveredGame?.player.name ?? enteredName;
   const [joinedIdentity, setJoinedIdentity] = useState<string | null>(null);
   const playerIdentity = joinedIdentity ?? recoveredGame?.player.id ?? null;
@@ -83,15 +86,15 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
     try {
       const identity = playerIdentity ?? crypto.randomUUID();
       const joinedPlayer = await joinPlayer({
+        cardCount,
         joinCode,
         name: normalizedName,
         playerIdentity: identity,
       });
 
       saveLocalGame(window.localStorage, {
-        card: joinedPlayer.card,
+        cards: joinedPlayer.cards,
         gameId: joinCode,
-        markedSongIds: [],
         player: { id: identity, name: normalizedName },
       });
       setJoinedIdentity(identity);
@@ -102,13 +105,13 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
     }
   }
 
-  async function onMark(songId: string) {
+  async function onMark(cardId: string, songId: string) {
     if (!playerIdentity) {
       return;
     }
 
     try {
-      await markCell({ joinCode, playerIdentity, songId });
+      await markCell({ cardId, joinCode, playerIdentity, songId });
     } catch {
       setError("No se pudo marcar esta canción.");
     }
@@ -145,9 +148,9 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
   }
 
   if (playerIdentity && game) {
-    const cardSongIds = game.player.card.songs.map((song) => song.id);
-    const canClaimLine = hasMarkedVerticalLine(game.player.markedSongIds, cardSongIds);
-    const canClaimFullCard = cardSongIds.every((songId) => game.player.markedSongIds.includes(songId));
+    const activeCard = game.player.cards[activeCardIndex] ?? game.player.cards[0];
+    const canClaimLine = game.player.cards.some((card) => hasMarkedVerticalLine(card.markedSongIds, card.songs.map((song) => song.id)));
+    const canClaimFullCard = game.player.cards.some((card) => card.songs.every((song) => card.markedSongIds.includes(song.id)));
     const gameFinished = game.game.status === "completed" || game.game.status === "cancelled";
     const statusLabel = game.game.status === "waiting" ? "EN ESPERA" : game.game.status === "playing" ? "EN CURSO" : game.game.status === "completed" ? "FINALIZADA" : "CANCELADA";
     const statusIcon = game.game.status === "waiting" ? "ticket" : game.game.status === "playing" ? "radio" : game.game.status === "completed" ? "check-circle" : "ban";
@@ -157,8 +160,11 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
         <p className="field-label"><Icon name={statusIcon} /> PARTIDA {statusLabel}</p>
         <p>{gameFinished ? "La partida ha terminado. Gracias por jugar." : `${game.game.calledSongCount} canciones anunciadas. La línea se completa en vertical: 4 canciones de una columna. Puedes marcar y corregir tu cartón; se validará al reclamar.`}</p>
       </section>
-      <section className="card-grid" aria-label="Tu cartón musical">
-        {game.player.card.songs.map((song) => <button aria-pressed={game.player.markedSongIds.includes(song.id)} className="song-cell" disabled={gameFinished} key={song.id} onClick={() => onMark(song.id)} type="button">
+      {game.player.cards.length > 1 ? <nav aria-label="Seleccionar cartón" className="card-tabs">
+        {game.player.cards.map((card, index) => <button aria-current={index === activeCardIndex ? "page" : undefined} className="card-tab" key={card.id} onClick={() => setActiveCardIndex(index)} type="button">Cartón {index + 1} de {game.player.cards.length}</button>)}
+      </nav> : null}
+      <section className="card-grid" aria-label={`Tu cartón musical ${activeCardIndex + 1}`}>
+        {activeCard.songs.map((song) => <button aria-pressed={activeCard.markedSongIds.includes(song.id)} className="song-cell" disabled={gameFinished} key={song.id} onClick={() => onMark(activeCard.id, song.id)} type="button">
           <strong>{song.title}</strong><span>{song.artist}</span>
         </button>)}
       </section>
@@ -181,6 +187,11 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
         required
         value={name}
       />
+      <label className="field-label" htmlFor="cardCount">NÚMERO DE CARTONES</label>
+      <select className="field" id="cardCount" name="cardCount" onChange={(event) => setCardCount(Number(event.target.value))} value={cardCount}>
+        {Array.from({ length: MAX_CARDS_PER_PLAYER }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1} cartón{index === 0 ? "" : "es"}</option>)}
+      </select>
+      <p>La cantidad queda fijada al entrar.</p>
       <button className="button" disabled={joining} type="submit">
         <Icon name="play" /> {joining ? "Entrando…" : "Entrar a jugar"}
       </button>

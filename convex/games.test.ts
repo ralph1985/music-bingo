@@ -129,7 +129,7 @@ describe("game storage", () => {
     await expect(t.mutation(api.games.markCell, {
       joinCode: "CERRADA",
       playerIdentity: "finished-game-player",
-      songId: player.card.songs[0].id,
+      songId: player.cards[0].songs[0].id,
     })).rejects.toThrow("Game is not active.");
     await expect(t.mutation(api.games.claimLine, {
       joinCode: "CERRADA",
@@ -178,8 +178,8 @@ describe("game storage", () => {
     });
     await t.mutation(internal.games.startGame, { joinCode: "DOSJUG" });
 
-    const lineSongIds = [0, 3, 6, 9].map((index) => firstPlayer.card.songs[index].id);
-    for (const songId of new Set([...lineSongIds, ...secondPlayer.card.songs.map((song) => song.id)])) {
+    const lineSongIds = [0, 3, 6, 9].map((index) => firstPlayer.cards[0].songs[index].id);
+    for (const songId of new Set([...lineSongIds, ...secondPlayer.cards[0].songs.map((song) => song.id)])) {
       await t.mutation(internal.games.callSong, { joinCode: "DOSJUG", songId });
     }
     for (const songId of lineSongIds) {
@@ -190,7 +190,7 @@ describe("game storage", () => {
       playerIdentity: "line-player",
     })).resolves.toEqual({ outcome: "won" });
 
-    for (const song of secondPlayer.card.songs) {
+    for (const song of secondPlayer.cards[0].songs) {
       await t.mutation(api.games.markCell, { joinCode: "DOSJUG", playerIdentity: "bingo-player", songId: song.id });
     }
     await expect(t.mutation(api.games.claimFullCard, {
@@ -286,7 +286,7 @@ describe("game storage", () => {
       playerIdentity: "player-identity-card",
     });
 
-    expect(player.card.songs).toHaveLength(12);
+    expect(player.cards[0].songs).toHaveLength(12);
   });
 
   it("returns the existing player card when the same identity joins again", async () => {
@@ -343,7 +343,7 @@ describe("game storage", () => {
       name: "Rafa",
       playerIdentity: "player-identity-1",
     });
-    const songId = joined.card.songs[0].id;
+    const songId = joined.cards[0].songs[0].id;
 
     await t.mutation(api.games.markCell, {
       joinCode: "JOIN-1234",
@@ -360,7 +360,7 @@ describe("game storage", () => {
       joinCode: "JOIN-1234",
       playerIdentity: "player-identity-1",
     });
-    expect(game?.player.markedSongIds).toEqual([]);
+    expect(game?.player.cards[0].markedSongIds).toEqual([]);
   });
 
   it("accepts the first valid vertical line claim for called and marked card songs", async () => {
@@ -376,7 +376,7 @@ describe("game storage", () => {
       name: "Rafa",
       playerIdentity: "player-identity-1",
     });
-    const lineSongIds = [0, 3, 6, 9].map((index) => joined.card.songs[index].id);
+    const lineSongIds = [0, 3, 6, 9].map((index) => joined.cards[0].songs[index].id);
 
     for (const songId of lineSongIds) {
       await t.mutation(internal.games.callSong, { joinCode: "JOIN-1234", songId });
@@ -406,7 +406,7 @@ describe("game storage", () => {
       playerIdentity: "player-identity-1",
     });
 
-    for (const song of joined.card.songs) {
+    for (const song of joined.cards[0].songs) {
       await t.mutation(internal.games.callSong, { joinCode: "JOIN-1234", songId: song.id });
       await t.mutation(api.games.markCell, { joinCode: "JOIN-1234", playerIdentity: "player-identity-1", songId: song.id });
     }
@@ -463,5 +463,43 @@ describe("game storage", () => {
       name: "Llega tarde",
       playerIdentity: "late-player",
     })).rejects.toThrow("Game not found.");
+  });
+
+  it("deals independent cards and validates claims on any selected card", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+    await t.mutation(internal.games.createGame, { joinCode: "MULTI01", playlist });
+    const joined = await t.mutation(api.games.joinPlayer, {
+      cardCount: 2,
+      joinCode: "MULTI01",
+      name: "Rafa",
+      playerIdentity: "multi-player",
+    });
+
+    expect(joined.cards).toHaveLength(2);
+    expect(joined.cards[0].id).not.toBe(joined.cards[1].id);
+
+    for (const song of joined.cards[1].songs) {
+      await t.mutation(internal.games.callSong, { joinCode: "MULTI01", songId: song.id });
+      await t.mutation(api.games.markCell, {
+        cardId: joined.cards[1].id,
+        joinCode: "MULTI01",
+        playerIdentity: "multi-player",
+        songId: song.id,
+      });
+    }
+
+    await expect(t.mutation(api.games.claimFullCard, {
+      joinCode: "MULTI01",
+      playerIdentity: "multi-player",
+    })).resolves.toEqual({ outcome: "won" });
+    await expect(t.query(internal.games.getByCode, { joinCode: "MULTI01" })).resolves.toMatchObject({
+      fullCardWinnerCardId: joined.cards[1].id,
+      status: "completed",
+    });
   });
 });

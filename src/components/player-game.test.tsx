@@ -16,4 +16,11 @@ describe("PlayerGame", () => {
     expect(markup).toContain("Entrar a jugar");
     expect(markup).toContain('data-icon="ticket"');
   });
+
+  it("lets a new player choose a fixed number of cards", () => {
+    const markup = renderToStaticMarkup(<PlayerGame joinCode="FIESTA1" />);
+
+    expect(markup).toContain('name="cardCount"');
+    expect(markup).toContain("La cantidad queda fijada al entrar.");
+  });
 });

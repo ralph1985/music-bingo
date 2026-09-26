@@ -10,6 +10,12 @@ export type Card = {
   songs: Song[];
 };
 
+export type PlayerCard = {
+  id: string;
+  markedSongIds: string[];
+  songs: Song[];
+};
+
 export type GameStatus =
   | "inicio"
   | "creada"
@@ -26,8 +32,7 @@ export type PlayerProfile = {
 export type LocalGame = {
   gameId: string;
   player: PlayerProfile;
-  card: Card;
-  markedSongIds: string[];
+  cards: PlayerCard[];
 };
 
 export type GamePlayer = PlayerProfile & {

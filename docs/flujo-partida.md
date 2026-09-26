@@ -22,7 +22,7 @@ Una sola partida puede estar activa por instalación. Una partida terminada o ca
 1. Abre `/admin` e inicia sesión con la contraseña fija.
 2. Pega una lista de canciones o carga TXT/CSV. La aplicación normaliza y muestra una previsualización editable antes de crear la partida.
 3. Crea la partida y recibe el enlace de jugador, el código corto y el QR.
-4. Se une también como jugador y recibe un cartón digital de 3 × 4.
+4. Se une también como jugador y elige entre uno y cuatro cartones digitales de 3 × 4; la cantidad queda fijada para esa partida.
 5. Comparte la URL o QR con los participantes mientras la partida está en `esperando_jugadores`.
 6. Inicia la partida. Desde ese momento selecciona manualmente una canción pendiente cada vez que la reproduce fuera de la aplicación. La aplicación registra la canción como `called` y la muestra al administrador con su historial completo.
 7. Puede terminar o cancelar la partida. Una canción ya anunciada no puede volver a anunciarse salvo una corrección administrativa explícita que se defina en una fase posterior.
@@ -30,11 +30,11 @@ Una sola partida puede estar activa por instalación. Una partida terminada o ca
 ## Flujo de un jugador
 
 1. Abre `/play/<codigo>` desde el QR, el enlace compartido o introduciendo el código en la pantalla de entrada.
-2. Escribe su nombre. El navegador crea una identidad limitada a esa partida y recibe un único cartón.
-3. Conserva localmente nombre, identidad, cartón y marcas para reentrar desde el mismo dispositivo tras recargar o cerrar la web.
+2. Escribe su nombre y elige de uno a cuatro cartones. El navegador crea una identidad limitada a esa partida; la cantidad no se puede cambiar al reentrar.
+3. Conserva localmente nombre, identidad, cartones y marcas para reentrar desde el mismo dispositivo tras recargar o cerrar la web.
 4. Escucha la música fuera de la aplicación. Cuando el administrador anuncia una canción, la aplicación solo recibe una señal anónima; no revela título, artista, ID, enlace ni historial de canciones anunciadas.
 5. Marca la casilla que cree correcta. El servidor no confirma si el marcado es correcto en ese momento.
-6. Reclama `Línea` al completar una fila horizontal o `Cartón completo` al completar su cartón. El servidor valida la reclamación contra las canciones realmente anunciadas.
+6. Reclama `Línea` al completar una columna vertical de cuatro canciones o `Cartón completo` al completar cualquiera de sus cartones. El servidor valida la reclamación contra las canciones realmente anunciadas.
 
 Una reclamación inválida elimina al jugador de la partida y bloquea futuras marcas y reclamaciones. La primera línea válida se concede una única vez; después se desactiva `Línea` para todos y la partida continúa hasta que se valide un cartón completo.
 

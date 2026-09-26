@@ -2,13 +2,15 @@ import { internalMutation, internalQuery, mutation, query } from "./_generated/s
 
 import { v } from "convex/values";
 
+import { CARD_COLS, CARD_ROWS, generateCards, type GeneratedCard } from "../shared/card-generation";
+import { isValidCardCount } from "../shared/card-config";
+
 const MAX_PLAYLIST_SONGS = 75;
 const MIN_PLAYLIST_SONGS = 24;
 const MIN_GAME_PLAYERS = 2;
-const CARD_SONGS = 12;
 
 type StoredSong = { artist: string; id: string; title: string };
-type StoredCard = { cols: number; rows: number; songs: StoredSong[] };
+type StoredCard = GeneratedCard;
 
 const songValidator = v.object({
   artist: v.string(),
@@ -56,8 +58,10 @@ export const createGame = internalMutation({
 
     return await ctx.db.insert("games", {
       calledSongIds: [],
+      fullCardWinnerCardId: null,
       fullCardWinnerPlayerId: null,
       joinCode: args.joinCode,
+      lineWinnerCardId: null,
       lineWinnerPlayerId: null,
       playlist: args.playlist,
       status: "waiting",
@@ -216,6 +220,7 @@ export const getAdminGameByCode = internalQuery({
 
 export const joinPlayer = mutation({
   args: {
+    cardCount: v.optional(v.number()),
     joinCode: v.string(),
     name: v.string(),
     playerIdentity: v.string(),
@@ -244,25 +249,40 @@ export const joinPlayer = mutation({
       .unique();
 
     if (existingPlayer) {
-      return { card: existingPlayer.card, playerId: existingPlayer._id };
+      const cards = playerCards(existingPlayer);
+      if (!existingPlayer.cards) {
+        await ctx.db.patch("players", existingPlayer._id, {
+          cards,
+          cols: existingPlayer.card?.cols ?? CARD_COLS,
+          rows: existingPlayer.card?.rows ?? CARD_ROWS,
+        });
+      }
+      return { cards, cols: existingPlayer.cols ?? existingPlayer.card?.cols ?? CARD_COLS, playerId: existingPlayer._id, rows: existingPlayer.rows ?? existingPlayer.card?.rows ?? CARD_ROWS };
     }
 
-    const card = generateCard(game.playlist, args.playerIdentity);
+    const cardCount = args.cardCount ?? 1;
+    if (!isValidCardCount(cardCount)) {
+      throw new Error("El número de cartones debe estar entre 1 y 4.");
+    }
+
+    const cards = generateCards({ cardCount, playerIdentity: args.playerIdentity, playlist: game.playlist });
     const playerId = await ctx.db.insert("players", {
-      card,
+      cards,
+      cols: CARD_COLS,
       eliminated: false,
       gameId: game._id,
-      markedSongIds: [],
       name,
       playerIdentity: args.playerIdentity,
+      rows: CARD_ROWS,
     });
 
-    return { card, playerId };
+    return { cards, cols: CARD_COLS, playerId, rows: CARD_ROWS };
   },
 });
 
 export const markCell = mutation({
   args: {
+    cardId: v.optional(v.string()),
     joinCode: v.string(),
     playerIdentity: v.string(),
     songId: v.string(),
@@ -287,23 +307,19 @@ export const markCell = mutation({
       )
       .unique();
 
-    if (
-      !player
-      || !player.card.songs.some((song) => song.id === args.songId)
-    ) {
+    const cards = player ? playerCards(player) : [];
+    const card = cards.find((candidate) => candidate.id === (args.cardId ?? cards[0]?.id));
+    if (!player || !card || !card.songs.some((song) => song.id === args.songId)) {
       throw new Error("The selected card cell cannot be marked.");
     }
-    if (player.markedSongIds.includes(args.songId)) {
-      await ctx.db.patch("players", player._id, {
-        eliminated: false,
-        markedSongIds: player.markedSongIds.filter((songId) => songId !== args.songId),
-      });
-      return null;
-    }
-
     await ctx.db.patch("players", player._id, {
+      cards: cards.map((candidate) => candidate.id !== card.id ? candidate : {
+        ...candidate,
+        markedSongIds: candidate.markedSongIds.includes(args.songId)
+          ? candidate.markedSongIds.filter((songId) => songId !== args.songId)
+          : [...candidate.markedSongIds, args.songId],
+      }),
       eliminated: false,
-      markedSongIds: [...player.markedSongIds, args.songId],
     });
     return null;
   },
@@ -335,11 +351,12 @@ export const claimLine = mutation({
       return { outcome: "unavailable" };
     }
 
-    if (!hasValidLine(player.card, player.markedSongIds, game.calledSongIds)) {
+    const winningCard = playerCards(player).find((card) => hasValidLine(card, game.calledSongIds));
+    if (!winningCard) {
       return { outcome: "invalid" };
     }
 
-    await ctx.db.patch("games", game._id, { lineWinnerPlayerId: player._id });
+    await ctx.db.patch("games", game._id, { lineWinnerCardId: winningCard.id, lineWinnerPlayerId: player._id });
     return { outcome: "won" };
   },
 });
@@ -370,12 +387,14 @@ export const claimFullCard = mutation({
       return { outcome: "unavailable" };
     }
 
-    if (!player.card.songs.every((song) => player.markedSongIds.includes(song.id) && game.calledSongIds.includes(song.id))) {
+    const winningCard = playerCards(player).find((card) => card.songs.every((song) => card.markedSongIds.includes(song.id) && game.calledSongIds.includes(song.id)));
+    if (!winningCard) {
       return { outcome: "invalid" };
     }
 
     await ctx.db.patch("games", game._id, {
       completedAt: Date.now(),
+      fullCardWinnerCardId: winningCard.id,
       fullCardWinnerPlayerId: player._id,
       status: "completed",
     });
@@ -431,10 +450,11 @@ export const getPlayerGame = query({
       return null;
     }
 
+    const cards = playerCards(player);
     return {
       game: {
         calledSongCount: game.calledSongIds.length,
-        calledCardSongIds: player.card.songs
+        calledCardSongIds: cards.flatMap((card) => card.songs)
           .map((song) => song.id)
           .filter((songId) => game.calledSongIds.includes(songId)),
         fullCardClaimed: Boolean(game.fullCardWinnerPlayerId),
@@ -442,52 +462,34 @@ export const getPlayerGame = query({
         status: game.status,
       },
       player: {
-        card: player.card,
+        cards,
+        cols: player.cols ?? player.card?.cols ?? CARD_COLS,
         eliminated: player.eliminated,
-        markedSongIds: player.markedSongIds,
         name: player.name,
+        rows: player.rows ?? player.card?.rows ?? CARD_ROWS,
       },
     };
   },
 });
 
-function generateCard(playlist: StoredSong[], seed: string): StoredCard {
-  const songs = [...playlist];
-  const random = createSeededRandom(seed);
-
-  for (let index = songs.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(random() * (index + 1));
-    [songs[index], songs[swapIndex]] = [songs[swapIndex], songs[index]];
-  }
-
-  return { cols: 3, rows: 4, songs: songs.slice(0, CARD_SONGS) };
+function playerCards(player: { card?: { cols: number; rows: number; songs: StoredSong[] }; cards?: StoredCard[]; markedSongIds?: string[]; playerIdentity: string }): StoredCard[] {
+  if (player.cards) return player.cards;
+  if (!player.card) return [];
+  return [{
+    id: `card-legacy-${player.playerIdentity}`,
+    markedSongIds: player.markedSongIds ?? [],
+    songs: player.card.songs,
+  }];
 }
 
-function createSeededRandom(seed: string): () => number {
-  let state = 2166136261;
-
-  for (const character of seed) {
-    state ^= character.charCodeAt(0);
-    state = Math.imul(state, 16777619);
-  }
-
-  return () => {
-    state += 0x6d2b79f5;
-    let value = state;
-    value = Math.imul(value ^ (value >>> 15), value | 1);
-    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function hasValidLine(card: StoredCard, markedSongIds: string[], calledSongIds: string[]): boolean {
-  const visualColumns = 3;
+function hasValidLine(card: StoredCard, calledSongIds: string[]): boolean {
+  const visualColumns = CARD_COLS;
   const visualRows = card.songs.length / visualColumns;
 
   for (let column = 0; column < visualColumns; column += 1) {
     const songs = Array.from({ length: visualRows }, (_, row) => card.songs[row * visualColumns + column]);
 
-    if (songs.every((song) => markedSongIds.includes(song.id) && calledSongIds.includes(song.id))) {
+    if (songs.every((song) => card.markedSongIds.includes(song.id) && calledSongIds.includes(song.id))) {
       return true;
     }
   }
