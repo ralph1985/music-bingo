@@ -16,6 +16,10 @@ export function getJoinUnavailableMessage(available: boolean): string | null {
   return available ? null : "Esta partida ya no admite nuevos jugadores.";
 }
 
+export function getFinishedGameMessage(status: "completed" | "cancelled"): string {
+  return status === "completed" ? "La partida ha terminado. Gracias por jugar." : "La partida fue cancelada por el anfitrión.";
+}
+
 function FeedbackModal({ message, onClose }: { message: string; onClose: () => void }) {
   const won = message.startsWith("¡");
 
@@ -25,6 +29,17 @@ function FeedbackModal({ message, onClose }: { message: string; onClose: () => v
       <h2 id="feedback-title"><Icon name={won ? "check-circle" : "alert-circle"} /> {won ? "¡Enhorabuena!" : "Revisa tu cartón"}</h2>
       <p>{message}</p>
       <button autoFocus className="button" onClick={onClose} type="button">Continuar jugando</button>
+    </section>
+  </div>;
+}
+
+export function FinishedGameModal({ message, onClose }: { message: string; onClose: () => void }) {
+  return <div aria-labelledby="game-finished-title" className="modal-backdrop" role="dialog" aria-modal="true">
+    <section className="modal-card">
+      <p className="field-label">FIN DE LA PARTIDA</p>
+      <h2 id="game-finished-title"><Icon name="check-circle" /> Partida terminada</h2>
+      <p>{message}</p>
+      <button autoFocus className="button" onClick={onClose} type="button">Ver mi cartón</button>
     </section>
   </div>;
 }
@@ -69,6 +84,7 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
   const playerIdentity = joinedIdentity ?? recoveredGame?.player.id ?? null;
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [finishedGameNoticeDismissed, setFinishedGameNoticeDismissed] = useState(false);
   const game = useQuery(
     api.games.getPlayerGame,
     playerIdentity ? { joinCode, playerIdentity } : "skip",
@@ -157,6 +173,7 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
     const canClaimLine = game.player.cards.some((card) => hasMarkedVerticalLine(card.markedSongIds, card.songs.map((song) => song.id)));
     const canClaimFullCard = game.player.cards.some((card) => card.songs.every((song) => card.markedSongIds.includes(song.id)));
     const gameFinished = game.game.status === "completed" || game.game.status === "cancelled";
+    const finishedGameMessage = game.game.status === "completed" || game.game.status === "cancelled" ? getFinishedGameMessage(game.game.status) : null;
     const statusLabel = game.game.status === "waiting" ? "EN ESPERA" : game.game.status === "playing" ? "EN CURSO" : game.game.status === "completed" ? "FINALIZADA" : "CANCELADA";
     const statusIcon = game.game.status === "waiting" ? "ticket" : game.game.status === "playing" ? "radio" : game.game.status === "completed" ? "check-circle" : "ban";
 
@@ -176,6 +193,7 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
       {!game.game.lineClaimed && !game.player.eliminated ? <button className="button" disabled={gameFinished || !canClaimLine} onClick={onClaimLine} type="button"><Icon name="columns" /> Reclamar línea vertical (4 canciones)</button> : null}
       {!game.game.fullCardClaimed && !game.player.eliminated ? <button className="button" disabled={gameFinished || !canClaimFullCard} onClick={onClaimFullCard} type="button"><Icon name="trophy" /> ¡Bingo!</button> : null}
       {error ? <FeedbackModal message={error} onClose={() => setError(null)} /> : null}
+      {!error && finishedGameMessage && !finishedGameNoticeDismissed ? <FinishedGameModal message={finishedGameMessage} onClose={() => setFinishedGameNoticeDismissed(true)} /> : null}
     </>;
   }
 

@@ -26,6 +26,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 
 - Validación de línea vertical y bingo sobre cualquiera de los cartones del jugador, conservando la privacidad de los demás participantes.
 - Acción de crear partida visible y deshabilitada cuando faltan canciones válidas, con indicación clara de cuántas añadir y cómo continuar.
+- Al iniciar una ronda, el anfitrión pasa directamente a Anunciar; al terminar, los jugadores reciben un modal visible de fin de partida.
 - Favicon sustituido por el icono de marca de Bingo Musical en lugar del icono predeterminado.
 
 ## [0.1.0] - 2026-09-26
