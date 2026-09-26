@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import ConvexClientProvider from "@/components/convex-client-provider";
 import EnvironmentBanner from "@/components/environment-banner";
@@ -18,6 +18,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Bingo Musical",
   description: "Bingo musical móvil con cartones digitales y partidas compartidas.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#14141f",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

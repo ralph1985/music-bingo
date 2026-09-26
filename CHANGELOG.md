@@ -11,6 +11,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 - Marca visible `STAGING · develop · No es producción` en entornos no productivos.
 - CI de GitHub Actions con tests, typecheck, lint, build y smoke tests Playwright contra staging.
 - Configuración de Dependabot para actualizar dependencias y acciones de GitHub de forma controlada.
+- Metadatos PWA instalables con manifest, iconos de marca y color de tema.
 
 ### Cambiado
 

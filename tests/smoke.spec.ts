@@ -17,6 +17,29 @@ test("serves the branded favicon", async ({ page, request }) => {
   expect(response.headers()["content-type"]).toContain("icon");
 });
 
+test("serves installable PWA metadata", async ({ page, request }) => {
+  await page.goto("/");
+
+  await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", /manifest\.webmanifest/);
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#14141f");
+
+  const manifestResponse = await request.get("/manifest.webmanifest");
+  expect(manifestResponse.ok()).toBe(true);
+  const manifest = await manifestResponse.json();
+  expect(manifest.display).toBe("standalone");
+  expect(manifest.start_url).toBe("/");
+  expect(manifest.icons).toEqual(expect.arrayContaining([
+    expect.objectContaining({ src: "/icon-192.png", sizes: "192x192" }),
+    expect.objectContaining({ src: "/icon-512.png", sizes: "512x512" }),
+  ]));
+
+  for (const iconPath of ["/icon-192.png", "/icon-512.png", "/apple-icon.png"]) {
+    const iconResponse = await request.get(iconPath);
+    expect(iconResponse.ok()).toBe(true);
+    expect(iconResponse.headers()["content-type"]).toContain("image/png");
+  }
+});
+
 test("shows the staging environment marker", async ({ page }) => {
   await page.goto("/");
 
