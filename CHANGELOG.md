@@ -6,6 +6,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-27
+
 ### Añadido
 
 - Selección fija de uno a cuatro cartones por jugador, con marcas independientes y navegación móvil entre cartones.
@@ -72,4 +74,5 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 - Respuestas de jugador limitadas a los datos necesarios para jugar.
 - Alertas y actualizaciones de seguridad de Dependabot activadas en GitHub.
 
-[unreleased]: https://github.com/ralph1985/music-bingo/compare/main...develop
+[unreleased]: https://github.com/ralph1985/music-bingo/compare/v0.2.0...develop
+[0.2.0]: https://github.com/ralph1985/music-bingo/compare/v0.1.0...v0.2.0
