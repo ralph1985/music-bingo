@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test:e2e": "playwright test",
     "secrets:admin": "node scripts/generate-admin-secrets.mjs",
     "secrets:admin-command": "node scripts/generate-admin-command-secret.mjs"
