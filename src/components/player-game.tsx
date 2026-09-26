@@ -12,6 +12,10 @@ type PlayerGameProps = {
   joinCode: string;
 };
 
+export function getJoinUnavailableMessage(available: boolean): string | null {
+  return available ? null : "Esta partida ya no admite nuevos jugadores.";
+}
+
 function FeedbackModal({ message, onClose }: { message: string; onClose: () => void }) {
   const won = message.startsWith("¡");
 
@@ -69,6 +73,7 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
     api.games.getPlayerGame,
     playerIdentity ? { joinCode, playerIdentity } : "skip",
   );
+  const availability = useQuery(api.games.getJoinAvailability, { joinCode });
 
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -172,6 +177,10 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
       {!game.game.fullCardClaimed && !game.player.eliminated ? <button className="button" disabled={gameFinished || !canClaimFullCard} onClick={onClaimFullCard} type="button"><Icon name="trophy" /> ¡Bingo!</button> : null}
       {error ? <FeedbackModal message={error} onClose={() => setError(null)} /> : null}
     </>;
+  }
+
+  if (!playerIdentity && availability?.available === false) {
+    return <section className="panel" role="status"><p>{getJoinUnavailableMessage(false)}</p></section>;
   }
 
   return <section className="panel">

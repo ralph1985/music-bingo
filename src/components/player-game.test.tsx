@@ -6,7 +6,7 @@ vi.mock("convex/react", () => ({
   useQuery: () => null,
 }));
 
-import PlayerGame from "./player-game";
+import PlayerGame, { getJoinUnavailableMessage } from "./player-game";
 
 describe("PlayerGame", () => {
   it("asks the player for a name before joining", () => {
@@ -23,5 +23,10 @@ describe("PlayerGame", () => {
     expect(markup).toContain('name="cardCount"');
     expect(markup).toContain("La cantidad queda fijada al entrar.");
     expect(markup).toContain("2 cartones");
+  });
+
+  it("explains when a shared game no longer accepts entrants", () => {
+    expect(getJoinUnavailableMessage(false)).toBe("Esta partida ya no admite nuevos jugadores.");
+    expect(getJoinUnavailableMessage(true)).toBeNull();
   });
 });
