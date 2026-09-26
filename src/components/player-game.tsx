@@ -189,7 +189,7 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
       />
       <label className="field-label" htmlFor="cardCount">NÚMERO DE CARTONES</label>
       <select className="field" id="cardCount" name="cardCount" onChange={(event) => setCardCount(Number(event.target.value))} value={cardCount}>
-        {Array.from({ length: MAX_CARDS_PER_PLAYER }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1} cartón{index === 0 ? "" : "es"}</option>)}
+        {Array.from({ length: MAX_CARDS_PER_PLAYER }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1} {index === 0 ? "cartón" : "cartones"}</option>)}
       </select>
       <p>La cantidad queda fijada al entrar.</p>
       <button className="button" disabled={joining} type="submit">

@@ -22,5 +22,6 @@ describe("PlayerGame", () => {
 
     expect(markup).toContain('name="cardCount"');
     expect(markup).toContain("La cantidad queda fijada al entrar.");
+    expect(markup).toContain("2 cartones");
   });
 });
