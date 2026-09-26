@@ -54,6 +54,9 @@ Convex agent skills for common tasks can be installed by running
 - Aplica Versionado Semántico: `patch` para correcciones compatibles, `minor` para capacidades compatibles nuevas y `major` para cambios incompatibles.
 - Publica el tag sobre el commit exacto de `main` que está en producción y crea la GitHub Release desde ese tag; nunca etiquetes `develop` como si fuera producción.
 - Verifica después que el tag apunta al SHA esperado y que la release no es draft ni prerelease. No crees tags ni releases sin petición expresa del usuario.
+- Mantén las dependencias directas de `package.json` fijadas a versiones exactas, sin rangos `^` o `~`; conserva `pnpm-lock.yaml` sincronizado.
+- Las actualizaciones normales de Dependabot deben entrar primero por `develop`; el workflow de CI debe pasar antes de promover cambios a `main`.
+- Dependabot espera como mínimo 7 días para actualizaciones minor y patch, y 30 días para major; las actualizaciones de seguridad no se retrasan por este cooldown.
 
 ## Invariantes del juego
 
