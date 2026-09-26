@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import PlaylistImport, { buildGameSummary, CancelGameConfirmation, shouldShowNewGameButton, SpotifyImportFeedback } from "./playlist-import";
+import PlaylistImport, { buildGameSummary, CancelGameConfirmation, getCreateGameReadiness, shouldShowNewGameButton, SpotifyImportFeedback } from "./playlist-import";
 
 describe("PlaylistImport", () => {
   it("keeps game creation unavailable until a playlist has been reviewed", () => {
@@ -14,6 +14,18 @@ describe("PlaylistImport", () => {
     expect(markup).toContain('data-icon="spotify"');
     expect(markup).toContain('data-icon="clipboard"');
     expect(markup).toContain('data-icon="eye"');
+  });
+
+  it("keeps the create-game action visible and explains how many valid songs are missing", () => {
+    expect(getCreateGameReadiness(22, 0)).toEqual({
+      canCreate: false,
+      message: "Faltan 2 canciones válidas para crear la partida. Añádelas a la lista y vuelve a previsualizarla.",
+    });
+    expect(getCreateGameReadiness(23, 0)).toEqual({
+      canCreate: false,
+      message: "Falta 1 canción válida para crear la partida. Añádela a la lista y vuelve a previsualizarla.",
+    });
+    expect(getCreateGameReadiness(24, 0)).toEqual({ canCreate: true, message: null });
   });
 
   it("starts the administrator dashboard on the setup tab", () => {

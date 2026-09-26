@@ -17,6 +17,19 @@ export function shouldShowNewGameButton(status: AdminGameStatus | null, tab: Adm
   return status === "completed" && tab === "setup";
 }
 
+export function getCreateGameReadiness(songCount: number, errorCount: number): { canCreate: boolean; message: string | null } {
+  if (errorCount > 0) {
+    return { canCreate: false, message: "Revisa las filas con errores antes de crear la partida." };
+  }
+
+  const missingSongs = Math.max(0, 24 - songCount);
+  return missingSongs === 0
+    ? { canCreate: true, message: null }
+    : missingSongs === 1
+      ? { canCreate: false, message: "Falta 1 canción válida para crear la partida. Añádela a la lista y vuelve a previsualizarla." }
+      : { canCreate: false, message: `Faltan ${missingSongs} canciones válidas para crear la partida. Añádelas a la lista y vuelve a previsualizarla.` };
+}
+
 export function SpotifyImportFeedback({ message }: { message: string | null }) {
   return message ? <p className="spotify-import-feedback" role="alert" aria-live="assertive">{message}</p> : null;
 }
@@ -378,7 +391,13 @@ export default function PlaylistImport() {
             <p><strong>{result.songs.length}</strong> canciones válidas</p>
             {result.songs.length > 0 ? <ul>{result.songs.map((song) => <li key={`${song.title}-${song.artist}`}><strong>{song.title}</strong><span>{song.artist}</span></li>)}</ul> : null}
             {result.errors.length > 0 ? <p role="alert">{result.errors.length} filas necesitan revisión.</p> : null}
-            {result.errors.length === 0 && result.songs.length >= 24 ? <button className="button" type="button" disabled={pending} onClick={createGame}><Icon name="play" /> {pending ? "Creando…" : "Crear partida"}</button> : <p role="alert">Añade {Math.max(0, 24 - result.songs.length)} canción{result.songs.length === 23 ? "" : "es"} válida{result.songs.length === 23 ? "" : "s"} más para crear la partida.</p>}
+            {(() => {
+              const readiness = getCreateGameReadiness(result.songs.length, result.errors.length);
+              return <>
+                <button aria-describedby={readiness.message ? "create-game-readiness" : undefined} className="button" type="button" disabled={pending || !readiness.canCreate} onClick={createGame}><Icon name="play" /> {pending ? "Creando…" : "Crear partida"}</button>
+                {readiness.message ? <p className="create-game-readiness" id="create-game-readiness" role="alert">{readiness.message}</p> : null}
+              </>;
+            })()}
           </div> : null}
         </>,
         room: createdGame ? <div className="import-result">
