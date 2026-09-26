@@ -46,4 +46,8 @@ jobs:
         run: pnpm lint
 
       - name: Build
+        env:
+          # El build necesita una URL pública, pero CI no debe usar ningún
+          # despliegue real de Convex.
+          NEXT_PUBLIC_CONVEX_URL: https://ci.invalid
         run: pnpm build
