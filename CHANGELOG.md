@@ -2,19 +2,23 @@
 
 Todos los cambios relevantes de Bingo Musical se documentan en este archivo.
 
-El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones siguen [Versionado Semántico](https://semver.org/lang/es/). El repositorio todavía no tiene un tag ni una release de GitHub; la versión publicada en `main` corresponde a `0.1.0` según `package.json`.
+El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones siguen [Versionado Semántico](https://semver.org/lang/es/). La versión publicada en `main` corresponde a `0.1.0`, con el tag `v0.1.0` y su release de GitHub.
 
 ## [Unreleased]
 
 ### Añadido
 
 - Marca visible `STAGING · develop · No es producción` en entornos no productivos.
+- CI de GitHub Actions con tests, typecheck, lint, build y smoke tests Playwright contra staging.
+- Configuración de Dependabot para actualizar dependencias y acciones de GitHub de forma controlada.
 
 ### Cambiado
 
 - Rama `develop` como integración y staging persistente en Vercel y Convex.
 - Despliegue automático de `develop` en Vercel, manteniendo `main` como producción.
 - Flujo de trabajo documentado para ramas, staging y pull requests hacia `main`.
+- Dependencias directas fijadas a versiones exactas y espera mínima antes de aceptar actualizaciones de Dependabot.
+- Generación explícita de tipos de rutas de Next.js antes del typecheck.
 
 ## [0.1.0] - 2026-09-26
 
@@ -57,5 +61,6 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 - Comandos administrativos protegidos por un secreto servidor a servidor entre Next.js y Convex.
 - Funciones administrativas mantenidas como funciones internas de Convex.
 - Respuestas de jugador limitadas a los datos necesarios para jugar.
+- Alertas y actualizaciones de seguridad de Dependabot activadas en GitHub.
 
 [unreleased]: https://github.com/ralph1985/music-bingo/compare/main...develop
