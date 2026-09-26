@@ -211,4 +211,4 @@ Consulta `AGENTS.md` antes de modificar código de Next.js o Convex: contiene re
 
 ## Licencia
 
-El repositorio no incluye actualmente un archivo `LICENSE`. No asumas permisos de reutilización o distribución hasta que se publique una licencia explícita.
+Este proyecto se distribuye bajo la [licencia MIT](LICENSE).
