@@ -6,8 +6,11 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-27
+
 ### Añadido
 
+- Selección fija de uno a cuatro cartones por jugador, con marcas independientes y navegación móvil entre cartones.
 - Marca visible `STAGING · develop · No es producción` en entornos no productivos.
 - CI de GitHub Actions con tests, typecheck, lint, build y smoke tests Playwright contra staging.
 - Configuración de Dependabot para actualizar dependencias y acciones de GitHub de forma controlada.
@@ -23,6 +26,9 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 
 ### Corregido
 
+- Validación de línea vertical y bingo sobre cualquiera de los cartones del jugador, conservando la privacidad de los demás participantes.
+- Acción de crear partida visible y deshabilitada cuando faltan canciones válidas, con indicación clara de cuántas añadir y cómo continuar.
+- Al iniciar una ronda, el anfitrión pasa directamente a Anunciar; al terminar, los jugadores reciben un modal visible de fin de partida.
 - Favicon sustituido por el icono de marca de Bingo Musical en lugar del icono predeterminado.
 
 ## [0.1.0] - 2026-09-26
@@ -68,4 +74,5 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 - Respuestas de jugador limitadas a los datos necesarios para jugar.
 - Alertas y actualizaciones de seguridad de Dependabot activadas en GitHub.
 
-[unreleased]: https://github.com/ralph1985/music-bingo/compare/main...develop
+[unreleased]: https://github.com/ralph1985/music-bingo/compare/v0.2.0...develop
+[0.2.0]: https://github.com/ralph1985/music-bingo/compare/v0.1.0...v0.2.0

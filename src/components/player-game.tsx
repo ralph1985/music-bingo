@@ -4,12 +4,21 @@ import { useMutation, useQuery } from "convex/react";
 import { type FormEvent, useState, useSyncExternalStore } from "react";
 
 import { api } from "../../convex/_generated/api";
+import { MAX_CARDS_PER_PLAYER } from "../../shared/card-config";
 import { loadLocalGame, saveLocalGame } from "../storage/local-storage";
 import { Icon } from "./icons";
 
 type PlayerGameProps = {
   joinCode: string;
 };
+
+export function getJoinUnavailableMessage(available: boolean): string | null {
+  return available ? null : "Esta partida ya no admite nuevos jugadores.";
+}
+
+export function getFinishedGameMessage(status: "completed" | "cancelled"): string {
+  return status === "completed" ? "La partida ha terminado. Gracias por jugar." : "La partida fue cancelada por el anfitrión.";
+}
 
 function FeedbackModal({ message, onClose }: { message: string; onClose: () => void }) {
   const won = message.startsWith("¡");
@@ -20,6 +29,17 @@ function FeedbackModal({ message, onClose }: { message: string; onClose: () => v
       <h2 id="feedback-title"><Icon name={won ? "check-circle" : "alert-circle"} /> {won ? "¡Enhorabuena!" : "Revisa tu cartón"}</h2>
       <p>{message}</p>
       <button autoFocus className="button" onClick={onClose} type="button">Continuar jugando</button>
+    </section>
+  </div>;
+}
+
+export function FinishedGameModal({ message, onClose }: { message: string; onClose: () => void }) {
+  return <div aria-labelledby="game-finished-title" className="modal-backdrop" role="dialog" aria-modal="true">
+    <section className="modal-card">
+      <p className="field-label">FIN DE LA PARTIDA</p>
+      <h2 id="game-finished-title"><Icon name="check-circle" /> Partida terminada</h2>
+      <p>{message}</p>
+      <button autoFocus className="button" onClick={onClose} type="button">Ver mi cartón</button>
     </section>
   </div>;
 }
@@ -57,15 +77,19 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
   );
   const recoveredGame = savedGame?.gameId === joinCode ? savedGame : null;
   const [enteredName, setEnteredName] = useState("");
+  const [cardCount, setCardCount] = useState(1);
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
   const name = recoveredGame?.player.name ?? enteredName;
   const [joinedIdentity, setJoinedIdentity] = useState<string | null>(null);
   const playerIdentity = joinedIdentity ?? recoveredGame?.player.id ?? null;
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [finishedGameNoticeDismissed, setFinishedGameNoticeDismissed] = useState(false);
   const game = useQuery(
     api.games.getPlayerGame,
     playerIdentity ? { joinCode, playerIdentity } : "skip",
   );
+  const availability = useQuery(api.games.getJoinAvailability, { joinCode });
 
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -83,15 +107,15 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
     try {
       const identity = playerIdentity ?? crypto.randomUUID();
       const joinedPlayer = await joinPlayer({
+        cardCount,
         joinCode,
         name: normalizedName,
         playerIdentity: identity,
       });
 
       saveLocalGame(window.localStorage, {
-        card: joinedPlayer.card,
+        cards: joinedPlayer.cards,
         gameId: joinCode,
-        markedSongIds: [],
         player: { id: identity, name: normalizedName },
       });
       setJoinedIdentity(identity);
@@ -102,13 +126,13 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
     }
   }
 
-  async function onMark(songId: string) {
+  async function onMark(cardId: string, songId: string) {
     if (!playerIdentity) {
       return;
     }
 
     try {
-      await markCell({ joinCode, playerIdentity, songId });
+      await markCell({ cardId, joinCode, playerIdentity, songId });
     } catch {
       setError("No se pudo marcar esta canción.");
     }
@@ -145,10 +169,11 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
   }
 
   if (playerIdentity && game) {
-    const cardSongIds = game.player.card.songs.map((song) => song.id);
-    const canClaimLine = hasMarkedVerticalLine(game.player.markedSongIds, cardSongIds);
-    const canClaimFullCard = cardSongIds.every((songId) => game.player.markedSongIds.includes(songId));
+    const activeCard = game.player.cards[activeCardIndex] ?? game.player.cards[0];
+    const canClaimLine = game.player.cards.some((card) => hasMarkedVerticalLine(card.markedSongIds, card.songs.map((song) => song.id)));
+    const canClaimFullCard = game.player.cards.some((card) => card.songs.every((song) => card.markedSongIds.includes(song.id)));
     const gameFinished = game.game.status === "completed" || game.game.status === "cancelled";
+    const finishedGameMessage = game.game.status === "completed" || game.game.status === "cancelled" ? getFinishedGameMessage(game.game.status) : null;
     const statusLabel = game.game.status === "waiting" ? "EN ESPERA" : game.game.status === "playing" ? "EN CURSO" : game.game.status === "completed" ? "FINALIZADA" : "CANCELADA";
     const statusIcon = game.game.status === "waiting" ? "ticket" : game.game.status === "playing" ? "radio" : game.game.status === "completed" ? "check-circle" : "ban";
 
@@ -157,15 +182,23 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
         <p className="field-label"><Icon name={statusIcon} /> PARTIDA {statusLabel}</p>
         <p>{gameFinished ? "La partida ha terminado. Gracias por jugar." : `${game.game.calledSongCount} canciones anunciadas. La línea se completa en vertical: 4 canciones de una columna. Puedes marcar y corregir tu cartón; se validará al reclamar.`}</p>
       </section>
-      <section className="card-grid" aria-label="Tu cartón musical">
-        {game.player.card.songs.map((song) => <button aria-pressed={game.player.markedSongIds.includes(song.id)} className="song-cell" disabled={gameFinished} key={song.id} onClick={() => onMark(song.id)} type="button">
+      {game.player.cards.length > 1 ? <nav aria-label="Seleccionar cartón" className="card-tabs">
+        {game.player.cards.map((card, index) => <button aria-current={index === activeCardIndex ? "page" : undefined} className="card-tab" key={card.id} onClick={() => setActiveCardIndex(index)} type="button">Cartón {index + 1} de {game.player.cards.length}</button>)}
+      </nav> : null}
+      <section className="card-grid" aria-label={`Tu cartón musical ${activeCardIndex + 1}`}>
+        {activeCard.songs.map((song) => <button aria-pressed={activeCard.markedSongIds.includes(song.id)} className="song-cell" disabled={gameFinished} key={song.id} onClick={() => onMark(activeCard.id, song.id)} type="button">
           <strong>{song.title}</strong><span>{song.artist}</span>
         </button>)}
       </section>
       {!game.game.lineClaimed && !game.player.eliminated ? <button className="button" disabled={gameFinished || !canClaimLine} onClick={onClaimLine} type="button"><Icon name="columns" /> Reclamar línea vertical (4 canciones)</button> : null}
       {!game.game.fullCardClaimed && !game.player.eliminated ? <button className="button" disabled={gameFinished || !canClaimFullCard} onClick={onClaimFullCard} type="button"><Icon name="trophy" /> ¡Bingo!</button> : null}
       {error ? <FeedbackModal message={error} onClose={() => setError(null)} /> : null}
+      {!error && finishedGameMessage && !finishedGameNoticeDismissed ? <FinishedGameModal message={finishedGameMessage} onClose={() => setFinishedGameNoticeDismissed(true)} /> : null}
     </>;
+  }
+
+  if (!playerIdentity && availability?.available === false) {
+    return <section className="panel" role="status"><p>{getJoinUnavailableMessage(false)}</p></section>;
   }
 
   return <section className="panel">
@@ -181,6 +214,11 @@ export default function PlayerGame({ joinCode }: PlayerGameProps) {
         required
         value={name}
       />
+      <label className="field-label" htmlFor="cardCount">NÚMERO DE CARTONES</label>
+      <select className="field" id="cardCount" name="cardCount" onChange={(event) => setCardCount(Number(event.target.value))} value={cardCount}>
+        {Array.from({ length: MAX_CARDS_PER_PLAYER }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1} {index === 0 ? "cartón" : "cartones"}</option>)}
+      </select>
+      <p>La cantidad queda fijada al entrar.</p>
       <button className="button" disabled={joining} type="submit">
         <Icon name="play" /> {joining ? "Entrando…" : "Entrar a jugar"}
       </button>
