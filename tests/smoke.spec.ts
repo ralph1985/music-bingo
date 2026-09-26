@@ -15,6 +15,18 @@ test("shows the staging environment marker", async ({ page }) => {
   await expect(banner).toContainText("No es producción");
 });
 
+test("keeps the staging marker at the top while scrolling", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto("/");
+
+  const banner = page.getByLabel("Entorno de la aplicación");
+  await expect.poll(() => banner.evaluate((element) => getComputedStyle(element).position)).toBe("sticky");
+
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+
+  await expect.poll(() => banner.evaluate((element) => Math.round(element.getBoundingClientRect().top))).toBe(0);
+});
+
 test("loads the admin entry point without an active session", async ({ page }) => {
   await page.goto("/admin");
 
