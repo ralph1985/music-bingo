@@ -44,8 +44,23 @@ next-env.d.ts
 
 # local agent-tool metadata
 .hermes/
-.agents/
-.claude/
+AGENTS.override.md
+CLAUDE.local.md
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/music-bingo-verify/
+!.agents/skills/music-bingo-verify/**
+!.agents/skills/music-bingo-convex/
+!.agents/skills/music-bingo-convex/**
+!.agents/skills/music-bingo-mobile-ui/
+!.agents/skills/music-bingo-mobile-ui/**
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/music-bingo-verify
+!.claude/skills/music-bingo-convex
+!.claude/skills/music-bingo-mobile-ui
 skills-lock.json
 convex/README.md
 convex/_generated/ai/
