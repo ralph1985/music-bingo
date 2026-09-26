@@ -17,6 +17,10 @@ export function shouldShowNewGameButton(status: AdminGameStatus | null, tab: Adm
   return status === "completed" && tab === "setup";
 }
 
+export function getTabAfterStartingGame(): AdminTabId {
+  return "calls";
+}
+
 export function getCreateGameReadiness(songCount: number, errorCount: number): { canCreate: boolean; message: string | null } {
   if (errorCount > 0) {
     return { canCreate: false, message: "Revisa las filas con errores antes de crear la partida." };
@@ -215,6 +219,7 @@ export default function PlaylistImport() {
         return;
       }
       setCreatedGame({ ...createdGame, status: "playing" });
+      setActiveTab(getTabAfterStartingGame());
     } catch {
       setError("No se pudo contactar con la sala. Inténtalo de nuevo.");
     } finally {
@@ -420,6 +425,7 @@ export default function PlaylistImport() {
           {copyFeedback ? <p className="copy-feedback" role="status">{copyFeedback}</p> : null}
         </div> : <p>Crea una partida en Preparar para abrir la sala.</p>,
         calls: createdGame?.status === "playing" || createdGame?.status === "completed" ? <div className="import-result">
+          {createdGame.status === "playing" ? <p className="calls-guidance" role="status">Partida iniciada. Elige una canción pendiente para anunciarla a los jugadores.</p> : null}
           {lastCalledSong ? <section className="import-result"><p className="field-label"><Icon name="volume" /> ÚLTIMA CANCIÓN ANUNCIADA</p><p><strong>{lastCalledSong.title}</strong> — {lastCalledSong.artist}</p></section> : <p>Aún no se ha anunciado ninguna canción.</p>}
           {calledSongs.length > 0 ? <section className="import-result"><p className="field-label"><Icon name="history" /> HISTORIAL DE CANCIONES</p><ol>{calledSongs.map(({ song, songId }) => <li key={`called-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol></section> : null}
           {createdGame.status === "playing" ? <><p className="field-label" style={{ marginTop: 18 }}><Icon name="music" /> CANCIONES PENDIENTES</p>{pendingSongs.map(({ song, songId }) => <button className="button" disabled={pending} key={songId} onClick={() => callSong(songId)} type="button"><Icon name="music" /> {song.title} — {song.artist}</button>)}</> : null}
