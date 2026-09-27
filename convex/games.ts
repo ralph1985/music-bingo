@@ -254,6 +254,33 @@ export const getAdminGameHistory = internalQuery({
   },
 });
 
+export const deleteGame = internalMutation({
+  args: { joinCode: v.string() },
+  handler: async (ctx, args) => {
+    const game = await ctx.db
+      .query("games")
+      .withIndex("by_joinCode", (q) => q.eq("joinCode", args.joinCode))
+      .unique();
+
+    if (!game) {
+      return false;
+    }
+    if (game.status !== "completed" && game.status !== "cancelled") {
+      throw new Error("Only completed or cancelled games can be deleted.");
+    }
+
+    const players = await ctx.db
+      .query("players")
+      .withIndex("by_gameId", (q) => q.eq("gameId", game._id))
+      .collect();
+    for (const player of players) {
+      await ctx.db.delete(player._id);
+    }
+    await ctx.db.delete(game._id);
+    return true;
+  },
+});
+
 export const joinPlayer = mutation({
   args: {
     cardCount: v.optional(v.number()),

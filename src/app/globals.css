@@ -201,5 +201,9 @@ a {
 .game-history-song-list { display: grid; gap: 6px; max-height: 220px; margin-top: 8px; padding: 10px; overflow-y: auto; border-radius: 10px; background: #ffffff08; scrollbar-color: #ffffff4d transparent; }
 .game-history-song-list p { color: #e8dfef; font-size: .82rem; line-height: 1.35; }
 .game-history-detail > .button:last-child { width: 100%; margin: 18px 0 0; }
+.game-history-delete-button { width: 100%; margin: 18px 0 0; }
+.game-history-delete-confirmation { display: grid; gap: 10px; margin-top: 18px; padding: 14px; border: 1px solid #ff4f9a80; border-radius: 12px; background: #ff4f9a16; color: #ffd6e7; }
+.game-history-delete-confirmation p:not(.field-label) { line-height: 1.45; }
+.game-history-delete-confirmation .button { width: 100%; margin: 0; }
 @media (max-width: 420px) { .game-lifecycle ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }.game-lifecycle li { overflow-wrap: normal; } }
 @media (min-width: 620px) { .entry-grid { grid-template-columns: 1fr 1fr; }.admin-tablist { grid-template-columns: repeat(5, minmax(0, 1fr)); }.game-history-controls { grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; }.game-history-controls .field-label:not(:first-child) { margin-top: 0; }.game-history-card .button { width: auto; justify-self: start; }.hero { padding-top: 110px; } }

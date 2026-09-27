@@ -106,6 +106,28 @@ http.route({
 });
 
 http.route({
+  path: "/admin/games/history",
+  method: "DELETE",
+  handler: httpAction(async (ctx, request) => {
+    if (!isAuthorizedAdminCommand(request.headers.get("x-admin-command-secret"), env.ADMIN_COMMAND_SECRET)) {
+      return Response.json({ error: "No autorizado." }, { status: 401 });
+    }
+
+    const body = await request.json().catch(() => null) as { joinCode?: unknown } | null;
+    if (typeof body?.joinCode !== "string") {
+      return Response.json({ error: "Solicitud inválida." }, { status: 400 });
+    }
+
+    try {
+      const deleted = await ctx.runMutation(internal.games.deleteGame, { joinCode: body.joinCode });
+      return Response.json({ deleted });
+    } catch {
+      return Response.json({ error: "Solo se pueden borrar partidas terminadas o canceladas." }, { status: 409 });
+    }
+  }),
+});
+
+http.route({
   path: "/admin/games/start",
   method: "POST",
   handler: httpAction(async (ctx, request) => {

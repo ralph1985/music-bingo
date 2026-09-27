@@ -12,6 +12,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 - El anfitrión puede anunciar una canción pendiente elegida aleatoriamente desde la pestaña **Anunciar**.
 - El historial de anuncios permite reproducir de nuevo una canción de Spotify sin duplicar el anuncio en la partida.
 - El panel de administración incluye un historial de partidas completadas y canceladas con filtros, resumen y detalle.
+- El historial permite borrar permanentemente una partida terminada o cancelada, incluidos sus jugadores, playlist y resultados, tras confirmar el código.
 - El control de reproducción de Spotify consulta los dispositivos disponibles, selecciona uno reproducible y reintenta si el dispositivo activo cambia.
 
 ## [0.2.0] - 2026-09-27

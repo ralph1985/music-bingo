@@ -104,6 +104,33 @@ export async function cancelGameCommand({
   }
 }
 
+export async function deleteGameCommand({
+  cloudUrl,
+  fetcher = fetch,
+  joinCode,
+  secret,
+}: Omit<CreateGameCommandInput, "playlist">): Promise<boolean> {
+  const response = await fetcher(`${deriveConvexSiteUrl(cloudUrl)}/admin/games/history`, {
+    method: "DELETE",
+    headers: {
+      "content-type": "application/json",
+      "x-admin-command-secret": secret,
+    },
+    body: JSON.stringify({ joinCode }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null) as { error?: unknown } | null;
+    throw new ConvexCommandError(
+      response.status,
+      typeof errorBody?.error === "string" ? errorBody.error : "No se pudo borrar la partida.",
+    );
+  }
+
+  const body = await response.json() as { deleted?: unknown };
+  return body.deleted === true;
+}
+
 export async function startGameCommand({
   cloudUrl,
   fetcher = fetch,

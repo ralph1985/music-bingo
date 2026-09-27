@@ -131,6 +131,21 @@ describe("game storage", () => {
     ]));
   });
 
+  it("deletes only terminal games", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+
+    await t.mutation(internal.games.createGame, { joinCode: "BORRA01", playlist });
+    await expect(t.mutation(internal.games.deleteGame, { joinCode: "BORRA01" })).rejects.toThrow("Only completed or cancelled games can be deleted");
+    await t.mutation(internal.games.cancelGame, { joinCode: "BORRA01" });
+    await expect(t.mutation(internal.games.deleteGame, { joinCode: "BORRA01" })).resolves.toBe(true);
+    await expect(t.query(internal.games.getByCode, { joinCode: "BORRA01" })).resolves.toBeNull();
+  });
+
   it("blocks card changes and claims after the host finishes a game", async () => {
     const t = convexTest(schema, modules);
     const playlist = Array.from({ length: 24 }, (_, index) => ({
