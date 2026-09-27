@@ -40,6 +40,15 @@ export function pickRandomSongId(songIds: string[], randomValue = Math.random())
   return songIds[Math.min(songIds.length - 1, Math.floor(safeRandomValue * songIds.length))] ?? null;
 }
 
+function normalizeSearch(value: string): string {
+  return value.toLocaleLowerCase("es").normalize("NFD").replace(/\p{Diacritic}/gu, "");
+}
+
+export function songMatchesSearch(song: Song, query: string): boolean {
+  const normalizedQuery = normalizeSearch(query.trim());
+  return normalizedQuery.length === 0 || normalizeSearch(`${song.title} ${song.artist}`).includes(normalizedQuery);
+}
+
 export function SpotifyImportFeedback({ message }: { message: string | null }) {
   return message ? <p className="spotify-import-feedback" role="alert" aria-live="assertive">{message}</p> : null;
 }
@@ -102,6 +111,7 @@ export default function PlaylistImport() {
   const [spotifyError, setSpotifyError] = useState<string | null>(null);
   const [spotifyPlaylist, setSpotifyPlaylist] = useState("");
   const [roomAction, setRoomAction] = useState<RoomAction>(null);
+  const [songSearch, setSongSearch] = useState("");
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const currentJoinCode = createdGame?.joinCode;
   const playerUrl = createdGame ? playerGameUrl(window.location.origin, createdGame.joinCode) : null;
@@ -353,6 +363,7 @@ export default function PlaylistImport() {
     setLineWinnerPlayerId(null);
     setPlayers([]);
     setResult(null);
+    setSongSearch("");
     setStartedAt(null);
     setPlaylistText("");
     setPreviewedPlaylistText("");
@@ -387,6 +398,7 @@ export default function PlaylistImport() {
   const playlistSongs = result?.songs.map((song, index) => ({ song, songId: `song-${index + 1}` })) ?? [];
   const calledSongs = playlistSongs.filter(({ songId }) => calledSongIds.includes(songId));
   const pendingSongs = playlistSongs.filter(({ songId }) => !calledSongIds.includes(songId));
+  const filteredPendingSongs = pendingSongs.filter(({ song }) => songMatchesSearch(song, songSearch));
   const lastCalledSong = calledSongs.at(-1)?.song;
   const missingPlayersToStart = Math.max(0, 2 - players.length);
 
@@ -458,8 +470,28 @@ export default function PlaylistImport() {
         calls: createdGame?.status === "playing" || createdGame?.status === "completed" ? <div className="import-result">
           {createdGame.status === "playing" ? <p className="calls-guidance" role="status">Partida iniciada. Elige una canción pendiente para anunciarla a los jugadores{playlistSongs.some(({ song }) => song.spotifyUri) ? " y cambiarla en Spotify" : ""}.</p> : null}
           {lastCalledSong ? <section className="import-result"><p className="field-label"><Icon name="volume" /> ÚLTIMA CANCIÓN ANUNCIADA</p><p><strong>{lastCalledSong.title}</strong> — {lastCalledSong.artist}</p></section> : <p>Aún no se ha anunciado ninguna canción.</p>}
-          {calledSongs.length > 0 ? <section className="import-result"><p className="field-label"><Icon name="history" /> HISTORIAL DE CANCIONES</p><ol>{calledSongs.map(({ song, songId }) => <li key={`called-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol></section> : null}
-          {createdGame.status === "playing" ? <><p className="field-label" style={{ marginTop: 18 }}><Icon name="music" /> CANCIONES PENDIENTES</p><button className="button button-secondary" disabled={pending || pendingSongs.length === 0} onClick={callRandomSong} type="button"><Icon name="shuffle" /> Anunciar canción aleatoria</button>{pendingSongs.map(({ song, songId }) => <button className="button" disabled={pending} key={songId} onClick={() => callSong(songId)} type="button"><Icon name="music" /> {song.spotifyUri ? "Reproducir y anunciar" : "Anunciar"}: {song.title} — {song.artist}</button>)}</> : null}
+          {calledSongs.length > 0 ? <details className="calls-history">
+            <summary><Icon name="history" /> Historial de canciones ({calledSongs.length})</summary>
+            <ol>{calledSongs.map(({ song, songId }) => <li key={`called-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol>
+          </details> : null}
+          {createdGame.status === "playing" ? <section aria-labelledby="pending-songs-title" className="calls-pending-section">
+            <div className="calls-controls">
+              <div className="calls-counts" aria-label="Estado de canciones">
+                <p><strong>{calledSongs.length}</strong><span>Anunciadas</span></p>
+                <p><strong>{pendingSongs.length}</strong><span>Pendientes</span></p>
+              </div>
+              <button className="button button-secondary calls-random-button" disabled={pending || pendingSongs.length === 0} onClick={callRandomSong} type="button"><Icon name="shuffle" /> Anunciar canción aleatoria</button>
+            </div>
+            <div className="calls-section-heading">
+              <p className="field-label" id="pending-songs-title"><Icon name="music" /> CANCIONES PENDIENTES</p>
+              <span>{filteredPendingSongs.length} visibles</span>
+            </div>
+            <label className="field-label calls-search-label" htmlFor="song-search">BUSCAR CANCIÓN</label>
+            <input className="field calls-search" id="song-search" onChange={(event) => setSongSearch(event.target.value)} placeholder="Título o artista" type="search" value={songSearch} />
+            <div className="calls-pending-list">
+              {filteredPendingSongs.length > 0 ? filteredPendingSongs.map(({ song, songId }) => <button className="button" disabled={pending} key={songId} onClick={() => callSong(songId)} type="button"><Icon name="music" /> {song.spotifyUri ? "Reproducir y anunciar" : "Anunciar"}: {song.title} — {song.artist}</button>) : <p className="calls-empty" role="status">No hay canciones pendientes que coincidan con la búsqueda.</p>}
+            </div>
+          </section> : null}
         </div> : <p>Inicia la partida para empezar a anunciar canciones.</p>,
         results: createdGame?.status === "completed" ? <section className="import-result"><ResultCelebration fullCardWinner={winnerName(fullCardWinnerPlayerId)} lineWinner={winnerName(lineWinnerPlayerId)} /><p>Inicio: <strong>{formatGameTimestamp(startedAt)}</strong></p><p>Fin: <strong>{formatGameTimestamp(completedAt)}</strong></p><p>{calledSongs.length} canciones anunciadas en total.</p>{calledSongs.length > 0 ? <ol className="result-song-list">{calledSongs.map(({ song, songId }) => <li key={`result-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol> : null}<button className="button button-secondary" onClick={() => { void copyGameSummary(); }} type="button"><Icon name="copy" /> Copiar resumen</button>{copyFeedback ? <p className="copy-feedback" role="status">{copyFeedback}</p> : null}</section> : <p>Los resultados estarán disponibles al finalizar la partida.</p>,
       }}

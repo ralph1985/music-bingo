@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import PlaylistImport, { buildGameSummary, CancelGameConfirmation, getCreateGameReadiness, getTabAfterStartingGame, pickRandomSongId, shouldShowNewGameButton, SpotifyImportFeedback } from "./playlist-import";
+import PlaylistImport, { buildGameSummary, CancelGameConfirmation, getCreateGameReadiness, getTabAfterStartingGame, pickRandomSongId, shouldShowNewGameButton, songMatchesSearch, SpotifyImportFeedback } from "./playlist-import";
 
 describe("PlaylistImport", () => {
   it("keeps game creation unavailable until a playlist has been reviewed", () => {
@@ -51,6 +51,15 @@ describe("PlaylistImport", () => {
     expect(pickRandomSongId(["song-1", "song-2", "song-3"], 0)).toBe("song-1");
     expect(pickRandomSongId(["song-1", "song-2", "song-3"], 0.99)).toBe("song-3");
     expect(pickRandomSongId([], 0.5)).toBeNull();
+  });
+
+  it("matches songs by title or artist without accents", () => {
+    const song = { artist: "Jarabe de Palo", title: "La Flaca" };
+
+    expect(songMatchesSearch(song, "flaca")).toBe(true);
+    expect(songMatchesSearch(song, "jarabe")).toBe(true);
+    expect(songMatchesSearch({ ...song, title: "Canción de verano" }, "cancion")).toBe(true);
+    expect(songMatchesSearch(song, "queen")).toBe(false);
   });
 
   it("shows Spotify import errors beside the import controls", () => {
