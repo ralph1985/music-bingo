@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import ConvexClientProvider from "@/components/convex-client-provider";
 import EnvironmentBanner from "@/components/environment-banner";
 import Footer from "@/components/footer";
+import ScrollBackground from "@/components/scroll-background";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
+        <ScrollBackground />
         <EnvironmentBanner />
         <ConvexClientProvider>
           {children}
