@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import PlaylistImport, { buildGameSummary, CancelGameConfirmation, getCreateGameReadiness, getTabAfterStartingGame, pickRandomSongId, shouldShowNewGameButton, songMatchesSearch, SpotifyImportFeedback } from "./playlist-import";
+import PlaylistImport, { buildGameSummary, CancelGameConfirmation, getCreateGameReadiness, getTabAfterStartingGame, isSpotifyPlaybackError, pickRandomSongId, PlaybackErrorModal, shouldShowNewGameButton, songMatchesSearch, SpotifyImportFeedback } from "./playlist-import";
 
 describe("PlaylistImport", () => {
   it("keeps game creation unavailable until a playlist has been reviewed", () => {
@@ -69,6 +69,17 @@ describe("PlaylistImport", () => {
     expect(markup).toContain('role="alert"');
     expect(markup).toContain('aria-live="assertive"');
     expect(markup).toContain("No se encontró esa playlist de Spotify.");
+  });
+
+  it("shows an actionable modal for playback errors", () => {
+    const markup = renderToStaticMarkup(<PlaybackErrorModal message="No hay ningún dispositivo Spotify activo." onClose={() => undefined} onRetry={() => undefined} />);
+
+    expect(isSpotifyPlaybackError("No hay ningún dispositivo Spotify activo.")).toBe(true);
+    expect(isSpotifyPlaybackError("No se pudo anunciar la canción.")).toBe(false);
+    expect(markup).toContain('role="alertdialog"');
+    expect(markup).toContain("No se pudo reproducir");
+    expect(markup).toContain("Reintentar");
+    expect(markup).toContain("La canción todavía no se ha anunciado");
   });
 
   it("requires explicit confirmation before cancelling a round", () => {

@@ -110,6 +110,11 @@ a {
 .modal-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: end center; padding: 20px; background: #09050ddd; backdrop-filter: blur(12px); }
 .modal-card { width: min(100%, 520px); padding: 26px; border: 1px solid #c6ff4388; border-radius: 26px; background: linear-gradient(145deg, #33204f, #181020); box-shadow: 0 -18px 80px #0009, 0 0 42px #c6ff4324; animation: modal-rise .2s ease-out; }
 .modal-card h2 { margin-bottom: 10px; font-size: 2rem; letter-spacing: -.05em; }.modal-card p:not(.field-label) { color: #e8dfef; line-height: 1.5; }
+.playback-error-modal { border-color: #ff4f9a99; background: linear-gradient(145deg, #4a1e42, #181020); }
+.playback-error-modal h2 { color: #ffd6e7; }
+.playback-error-note { margin-top: 12px; color: #ffd6e7 !important; font-weight: 750; }
+.playback-error-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }.playback-error-actions .button { flex: 1 1 12rem; margin: 0; }
+.playback-error-status { margin: 16px 0; padding: 12px 14px; border: 1px solid #ff4f9a99; border-radius: 12px; background: #ff4f9a1c; color: #ffd6e7; line-height: 1.45; }.playback-error-status button { padding: 0; border: 0; background: transparent; color: var(--lime); font: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }.playback-error-status button:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
 @keyframes modal-rise { from { opacity: 0; transform: translateY(24px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 .site-footer { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 54px 20px 26px; color: var(--muted); font-size: .7rem; }
 .site-footer a { display: inline-flex; border-radius: 4px; outline-offset: 4px; }

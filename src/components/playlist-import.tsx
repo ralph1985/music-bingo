@@ -49,6 +49,10 @@ export function songMatchesSearch(song: Song, query: string): boolean {
   return normalizedQuery.length === 0 || normalizeSearch(`${song.title} ${song.artist}`).includes(normalizedQuery);
 }
 
+export function isSpotifyPlaybackError(message: string): boolean {
+  return /spotify|dispositivo/i.test(message);
+}
+
 export function SpotifyImportFeedback({ message }: { message: string | null }) {
   return message ? <p className="spotify-import-feedback" role="alert" aria-live="assertive">{message}</p> : null;
 }
@@ -60,6 +64,23 @@ export function CancelGameConfirmation({ onCancel, onConfirm, pending }: { onCan
     <button className="button button-danger" disabled={pending} onClick={onConfirm} type="button"><Icon name="x-circle" /> {pending ? "Cancelando…" : "Cancelar partida definitivamente"}</button>
     <button className="button button-secondary" disabled={pending} onClick={onCancel} type="button"><Icon name="check" /> Mantener partida</button>
   </section>;
+}
+
+export function PlaybackErrorModal({ message, onClose, onRetry }: { message: string; onClose: () => void; onRetry: () => void }) {
+  const spotifyError = isSpotifyPlaybackError(message);
+
+  return <div aria-describedby="playback-error-description" aria-labelledby="playback-error-title" aria-modal="true" className="modal-backdrop" role="alertdialog">
+    <section className="modal-card playback-error-modal">
+      <p className="field-label">{spotifyError ? <><Icon name="spotify" /> PROBLEMA CON SPOTIFY</> : <><Icon name="alert-circle" /> PROBLEMA AL ANUNCIAR</>}</p>
+      <h2 id="playback-error-title"><Icon name="alert-circle" /> {spotifyError ? "No se pudo reproducir" : "No se pudo anunciar"}</h2>
+      <p id="playback-error-description">{message}</p>
+      <p className="playback-error-note">La canción todavía no se ha anunciado en la partida.</p>
+      <div className="playback-error-actions">
+        <button autoFocus className="button" onClick={onRetry} type="button"><Icon name="play" /> Reintentar</button>
+        <button className="button button-secondary" onClick={onClose} type="button">Cerrar</button>
+      </div>
+    </section>
+  </div>;
 }
 
 export function formatGameTimestamp(timestamp: number | null): string {
@@ -114,6 +135,9 @@ export default function PlaylistImport() {
   const [songSearch, setSongSearch] = useState("");
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [historySearch, setHistorySearch] = useState("");
+  const [failedSongId, setFailedSongId] = useState<string | null>(null);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
+  const [playbackModalOpen, setPlaybackModalOpen] = useState(false);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const currentJoinCode = createdGame?.joinCode;
   const playerUrl = createdGame ? playerGameUrl(window.location.origin, createdGame.joinCode) : null;
@@ -153,13 +177,16 @@ export default function PlaylistImport() {
   }, []);
 
   useEffect(() => {
-    if (!historyModalOpen) return;
+    if (!historyModalOpen && !playbackModalOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setHistoryModalOpen(false);
+      if (event.key === "Escape") {
+        setHistoryModalOpen(false);
+        setPlaybackModalOpen(false);
+      }
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [historyModalOpen]);
+  }, [historyModalOpen, playbackModalOpen]);
 
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -276,6 +303,9 @@ export default function PlaylistImport() {
 
     setPending(true);
     setError(null);
+    setPlaybackError(null);
+    setPlaybackModalOpen(false);
+    setFailedSongId(null);
     try {
       const response = await fetch("/api/admin/calls", {
         method: "POST",
@@ -284,16 +314,30 @@ export default function PlaylistImport() {
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null) as { error?: unknown } | null;
-        setError(typeof body?.error === "string" ? body.error : "No se pudo anunciar la canción.");
+        setPlaybackError(typeof body?.error === "string" ? body.error : "No se pudo anunciar la canción.");
+        setFailedSongId(songId);
+        setPlaybackModalOpen(true);
         return;
       }
 
       setCalledSongIds((current) => [...current, songId]);
+      setPlaybackError(null);
     } catch {
-      setError("No se pudo contactar con la sala. Inténtalo de nuevo.");
+      setPlaybackError("No se pudo contactar con la sala. Inténtalo de nuevo.");
+      setFailedSongId(songId);
+      setPlaybackModalOpen(true);
     } finally {
       setPending(false);
     }
+  }
+
+  function closePlaybackError() {
+    setPlaybackModalOpen(false);
+  }
+
+  function retryFailedSong() {
+    if (!failedSongId) return;
+    void callSong(failedSongId);
   }
 
   async function cancelGame() {
@@ -377,6 +421,9 @@ export default function PlaylistImport() {
     setSongSearch("");
     setHistoryModalOpen(false);
     setHistorySearch("");
+    setFailedSongId(null);
+    setPlaybackError(null);
+    setPlaybackModalOpen(false);
     setStartedAt(null);
     setPlaylistText("");
     setPreviewedPlaylistText("");
@@ -484,6 +531,7 @@ export default function PlaylistImport() {
         calls: createdGame?.status === "playing" || createdGame?.status === "completed" ? <div className="import-result">
           {createdGame.status === "playing" ? <p className="calls-guidance" role="status">Partida iniciada. Elige una canción pendiente para anunciarla a los jugadores{playlistSongs.some(({ song }) => song.spotifyUri) ? " y cambiarla en Spotify" : ""}.</p> : null}
           {lastCalledSong ? <section className="import-result"><p className="field-label"><Icon name="volume" /> ÚLTIMA CANCIÓN ANUNCIADA</p><p><strong>{lastCalledSong.title}</strong> — {lastCalledSong.artist}</p></section> : <p>Aún no se ha anunciado ninguna canción.</p>}
+          {playbackError && !playbackModalOpen ? <p className="playback-error-status" role="status"><strong>{isSpotifyPlaybackError(playbackError) ? "Spotify no disponible." : "No se pudo anunciar."}</strong> La canción todavía no se ha anunciado. <button onClick={() => setPlaybackModalOpen(true)} type="button">Ver detalles</button></p> : null}
           {calledSongs.length > 0 ? <>
             <button aria-haspopup="dialog" className="calls-history-trigger" onClick={() => setHistoryModalOpen(true)} type="button"><Icon name="history" /> Historial de canciones ({calledSongs.length})</button>
             {historyModalOpen ? <div aria-labelledby="calls-history-title" className="modal-backdrop calls-history-backdrop" role="dialog" aria-modal="true">
@@ -529,6 +577,7 @@ export default function PlaylistImport() {
               {filteredPendingSongs.length > 8 ? <p className="scroll-hint">Desliza dentro de la lista para ver más canciones ↓</p> : null}
             </div>
           </section> : null}
+          {playbackModalOpen && playbackError ? <PlaybackErrorModal message={playbackError} onClose={closePlaybackError} onRetry={retryFailedSong} /> : null}
         </div> : <p>Inicia la partida para empezar a anunciar canciones.</p>,
         results: createdGame?.status === "completed" ? <section className="import-result"><ResultCelebration fullCardWinner={winnerName(fullCardWinnerPlayerId)} lineWinner={winnerName(lineWinnerPlayerId)} /><p>Inicio: <strong>{formatGameTimestamp(startedAt)}</strong></p><p>Fin: <strong>{formatGameTimestamp(completedAt)}</strong></p><p>{calledSongs.length} canciones anunciadas en total.</p>{calledSongs.length > 0 ? <ol className="result-song-list">{calledSongs.map(({ song, songId }) => <li key={`result-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol> : null}<button className="button button-secondary" onClick={() => { void copyGameSummary(); }} type="button"><Icon name="copy" /> Copiar resumen</button>{copyFeedback ? <p className="copy-feedback" role="status">{copyFeedback}</p> : null}</section> : <p>Los resultados estarán disponibles al finalizar la partida.</p>,
       }}
