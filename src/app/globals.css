@@ -1,4 +1,4 @@
-:root { --ink: #f7f2e8; --muted: #a89fb7; --void: #100b1d; --panel: #201438; --pink: #ff4f9a; --lime: #c6ff43; --violet: #9873ff; --background-shift: 0px; }
+:root { --ink: #f7f2e8; --muted: #a89fb7; --void: #100b1d; --panel: #201438; --pink: #ff4f9a; --lime: #c6ff43; --violet: #9873ff; }
 
 html {
   height: 100%;
@@ -41,9 +41,8 @@ body::after {
   pointer-events: none;
   background: radial-gradient(circle at 86% 4%, #4c1f70 0, transparent 29rem), radial-gradient(circle at 8% 82%, #153e5c 0, transparent 31rem);
   background-repeat: no-repeat;
-  transform: translate3d(0, calc(var(--background-shift) * -1), 0) scale(1.08);
+  transform: scale(1.08);
   transform-origin: center top;
-  will-change: transform;
 }
 
 * {
