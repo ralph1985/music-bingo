@@ -72,7 +72,7 @@ describe("PlaylistImport", () => {
   });
 
   it("shows an actionable modal for playback errors", () => {
-    const markup = renderToStaticMarkup(<PlaybackErrorModal message="No hay ningún dispositivo Spotify activo." onClose={() => undefined} onRetry={() => undefined} />);
+    const markup = renderToStaticMarkup(<PlaybackErrorModal message="No hay ningún dispositivo Spotify activo." onClose={() => undefined} onRetry={() => undefined} operation="announce" />);
 
     expect(isSpotifyPlaybackError("No hay ningún dispositivo Spotify activo.")).toBe(true);
     expect(isSpotifyPlaybackError("No se pudo anunciar la canción.")).toBe(false);

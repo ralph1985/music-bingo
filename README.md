@@ -38,7 +38,7 @@ La aplicación valida las reclamaciones contra las canciones anunciadas por el a
 2. Importa una lista de canciones y revisa la previsualización.
 3. Crea la partida. La sala muestra un código, un enlace y un QR para los jugadores.
 4. Espera a que se unan al menos dos personas y pulsa **Iniciar partida**.
-5. Usa la pestaña **Anunciar** para seleccionar cada canción o **Anunciar canción aleatoria** para elegir una pendiente al azar. Las canciones importadas desde Spotify se pueden **Reproducir y anunciar**; las listas manuales se registran con **Anunciar**.
+5. Usa la pestaña **Anunciar** para seleccionar cada canción o **Anunciar canción aleatoria** para elegir una pendiente al azar. Las canciones importadas desde Spotify se pueden **Reproducir y anunciar**; las listas manuales se registran con **Anunciar**. El historial permite **Reproducir de nuevo** una canción ya anunciada sin duplicarla en la partida.
 6. Consulta ganadores e historial en **Resultados**. Puedes copiar un resumen o preparar una nueva partida.
 
 ### Formatos de importación manual

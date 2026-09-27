@@ -10,6 +10,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 
 - Las canciones importadas desde Spotify conservan su URI y el botón **Reproducir y anunciar** cambia la reproducción en el dispositivo Spotify activo antes de registrar la canción en la partida.
 - El anfitrión puede anunciar una canción pendiente elegida aleatoriamente desde la pestaña **Anunciar**.
+- El historial de anuncios permite reproducir de nuevo una canción de Spotify sin duplicar el anuncio en la partida.
 - El control de reproducción de Spotify consulta los dispositivos disponibles, selecciona uno reproducible y reintenta si el dispositivo activo cambia.
 
 ## [0.2.0] - 2026-09-27

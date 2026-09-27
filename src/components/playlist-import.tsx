@@ -12,6 +12,7 @@ type Song = { title: string; artist: string; spotifyUri?: string };
 type ImportResult = { songs: Song[]; errors: { line: number; message: string }[] };
 type AdminPlayer = { id: string; name: string };
 type RoomAction = "starting" | "finishing" | "cancelling" | null;
+type PlaybackAction = "announce" | "replay";
 
 export function shouldShowNewGameButton(status: AdminGameStatus | null, tab: AdminTabId): boolean {
   return status === "completed" && tab === "setup";
@@ -66,15 +67,16 @@ export function CancelGameConfirmation({ onCancel, onConfirm, pending }: { onCan
   </section>;
 }
 
-export function PlaybackErrorModal({ message, onClose, onRetry }: { message: string; onClose: () => void; onRetry: () => void }) {
+export function PlaybackErrorModal({ message, onClose, onRetry, operation }: { message: string; onClose: () => void; onRetry: () => void; operation: PlaybackAction }) {
   const spotifyError = isSpotifyPlaybackError(message);
+  const replaying = operation === "replay";
 
   return <div aria-describedby="playback-error-description" aria-labelledby="playback-error-title" aria-modal="true" className="modal-backdrop" role="alertdialog">
     <section className="modal-card playback-error-modal">
       <p className="field-label">{spotifyError ? <><Icon name="spotify" /> PROBLEMA CON SPOTIFY</> : <><Icon name="alert-circle" /> PROBLEMA AL ANUNCIAR</>}</p>
-      <h2 id="playback-error-title"><Icon name="alert-circle" /> {spotifyError ? "No se pudo reproducir" : "No se pudo anunciar"}</h2>
+      <h2 id="playback-error-title"><Icon name="alert-circle" /> {spotifyError ? replaying ? "No se pudo repetir" : "No se pudo reproducir" : "No se pudo anunciar"}</h2>
       <p id="playback-error-description">{message}</p>
-      <p className="playback-error-note">La canción todavía no se ha anunciado en la partida.</p>
+      <p className="playback-error-note">{replaying ? "La canción sigue anunciada en la partida; solo ha fallado la reproducción adicional." : "La canción todavía no se ha anunciado en la partida."}</p>
       <div className="playback-error-actions">
         <button autoFocus className="button" onClick={onRetry} type="button"><Icon name="play" /> Reintentar</button>
         {spotifyError ? <a className="button button-secondary" href="/api/admin/spotify/connect?returnTo=calls"><Icon name="spotify" /> Reconectar Spotify</a> : null}
@@ -139,6 +141,7 @@ export default function PlaylistImport() {
   const [failedSongId, setFailedSongId] = useState<string | null>(null);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [playbackModalOpen, setPlaybackModalOpen] = useState(false);
+  const [playbackAction, setPlaybackAction] = useState<PlaybackAction>("announce");
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const currentJoinCode = createdGame?.joinCode;
   const playerUrl = createdGame ? playerGameUrl(window.location.origin, createdGame.joinCode) : null;
@@ -317,6 +320,7 @@ export default function PlaylistImport() {
     setPlaybackError(null);
     setPlaybackModalOpen(false);
     setFailedSongId(null);
+    setPlaybackAction("announce");
     try {
       const response = await fetch("/api/admin/calls", {
         method: "POST",
@@ -342,13 +346,48 @@ export default function PlaylistImport() {
     }
   }
 
+  async function replaySong(songId: string) {
+    if (!createdGame) return;
+
+    setPending(true);
+    setPlaybackAction("replay");
+    setPlaybackError(null);
+    setPlaybackModalOpen(false);
+    setFailedSongId(null);
+    try {
+      const response = await fetch("/api/admin/spotify/replay", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ joinCode: createdGame.joinCode, songId }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null) as { error?: unknown } | null;
+        setPlaybackError(typeof body?.error === "string" ? body.error : "No se pudo repetir la reproducción.");
+        setFailedSongId(songId);
+        setPlaybackModalOpen(true);
+        return;
+      }
+      setPlaybackError(null);
+    } catch {
+      setPlaybackError("No se pudo contactar con Spotify. Inténtalo de nuevo.");
+      setFailedSongId(songId);
+      setPlaybackModalOpen(true);
+    } finally {
+      setPending(false);
+    }
+  }
+
   function closePlaybackError() {
     setPlaybackModalOpen(false);
   }
 
   function retryFailedSong() {
     if (!failedSongId) return;
-    void callSong(failedSongId);
+    if (playbackAction === "replay") {
+      void replaySong(failedSongId);
+    } else {
+      void callSong(failedSongId);
+    }
   }
 
   async function cancelGame() {
@@ -435,6 +474,7 @@ export default function PlaylistImport() {
     setFailedSongId(null);
     setPlaybackError(null);
     setPlaybackModalOpen(false);
+    setPlaybackAction("announce");
     setStartedAt(null);
     setPlaylistText("");
     setPreviewedPlaylistText("");
@@ -471,7 +511,9 @@ export default function PlaylistImport() {
   const pendingSongs = playlistSongs.filter(({ songId }) => !calledSongIds.includes(songId));
   const filteredCalledSongs = calledSongs.filter(({ song }) => songMatchesSearch(song, historySearch));
   const filteredPendingSongs = pendingSongs.filter(({ song }) => songMatchesSearch(song, songSearch));
-  const lastCalledSong = calledSongs.at(-1)?.song;
+  const lastCalled = calledSongs.at(-1);
+  const lastCalledSong = lastCalled?.song;
+  const lastCalledSongId = lastCalled?.songId;
   const missingPlayersToStart = Math.max(0, 2 - players.length);
 
   function callRandomSong() {
@@ -541,8 +583,8 @@ export default function PlaylistImport() {
         </div> : <p>Crea una partida en Preparar para abrir la sala.</p>,
         calls: createdGame?.status === "playing" || createdGame?.status === "completed" ? <div className="import-result">
           {createdGame.status === "playing" ? <p className="calls-guidance" role="status">Partida iniciada. Elige una canción pendiente para anunciarla a los jugadores{playlistSongs.some(({ song }) => song.spotifyUri) ? " y cambiarla en Spotify" : ""}.</p> : null}
-          {lastCalledSong ? <section className="import-result"><p className="field-label"><Icon name="volume" /> ÚLTIMA CANCIÓN ANUNCIADA</p><p><strong>{lastCalledSong.title}</strong> — {lastCalledSong.artist}</p></section> : <p>Aún no se ha anunciado ninguna canción.</p>}
-          {playbackError && !playbackModalOpen ? <p className="playback-error-status" role="status"><strong>{isSpotifyPlaybackError(playbackError) ? "Spotify no disponible." : "No se pudo anunciar."}</strong> La canción todavía no se ha anunciado. <button onClick={() => setPlaybackModalOpen(true)} type="button">Ver detalles</button></p> : null}
+          {lastCalledSong ? <section className="import-result"><p className="field-label"><Icon name="volume" /> ÚLTIMA CANCIÓN ANUNCIADA</p><p><strong>{lastCalledSong.title}</strong> — {lastCalledSong.artist}</p>{lastCalledSong.spotifyUri && lastCalledSongId ? <button className="button button-secondary replay-button" disabled={pending} onClick={() => void replaySong(lastCalledSongId)} type="button"><Icon name="play" /> Reproducir de nuevo</button> : null}</section> : <p>Aún no se ha anunciado ninguna canción.</p>}
+          {playbackError && !playbackModalOpen ? <p className="playback-error-status" role="status"><strong>{isSpotifyPlaybackError(playbackError) ? playbackAction === "replay" ? "No se pudo repetir en Spotify." : "Spotify no disponible." : "No se pudo anunciar."}</strong> {playbackAction === "replay" ? "La canción sigue anunciada; solo ha fallado la reproducción adicional." : "La canción todavía no se ha anunciado."} <button onClick={() => setPlaybackModalOpen(true)} type="button">Ver detalles</button></p> : null}
           {calledSongs.length > 0 ? <>
             <button aria-haspopup="dialog" className="calls-history-trigger" onClick={() => setHistoryModalOpen(true)} type="button"><Icon name="history" /> Historial de canciones ({calledSongs.length})</button>
             {historyModalOpen ? <div aria-labelledby="calls-history-title" className="modal-backdrop calls-history-backdrop" role="dialog" aria-modal="true">
@@ -559,7 +601,7 @@ export default function PlaylistImport() {
                 <p className="calls-modal-count" role="status">{filteredCalledSongs.length} visibles de {calledSongs.length}</p>
                 <div className="calls-history-scroll-region">
                   <ol className="calls-history-modal-list">
-                    {filteredCalledSongs.length > 0 ? filteredCalledSongs.map(({ song, songId }) => <li key={`called-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>) : <li className="calls-empty">No hay canciones anunciadas que coincidan con la búsqueda.</li>}
+                    {filteredCalledSongs.length > 0 ? filteredCalledSongs.map(({ song, songId }) => <li key={`called-${songId}`}><span className="replay-song-title"><strong>{song.title}</strong> — {song.artist}</span>{song.spotifyUri ? <button className="button button-secondary replay-button" disabled={pending} onClick={() => void replaySong(songId)} type="button"><Icon name="play" /> Reproducir de nuevo</button> : null}</li>) : <li className="calls-empty">No hay canciones anunciadas que coincidan con la búsqueda.</li>}
                   </ol>
                   {filteredCalledSongs.length > 8 ? <p className="scroll-hint">Desliza dentro de la lista para ver más canciones ↓</p> : null}
                 </div>
@@ -591,7 +633,7 @@ export default function PlaylistImport() {
               {filteredPendingSongs.length > 8 ? <p className="scroll-hint">Desliza dentro de la lista para ver más canciones ↓</p> : null}
             </div>
           </section> : null}
-          {playbackModalOpen && playbackError ? <PlaybackErrorModal message={playbackError} onClose={closePlaybackError} onRetry={retryFailedSong} /> : null}
+          {playbackModalOpen && playbackError ? <PlaybackErrorModal message={playbackError} onClose={closePlaybackError} onRetry={retryFailedSong} operation={playbackAction} /> : null}
         </div> : <p>Inicia la partida para empezar a anunciar canciones.</p>,
         results: createdGame?.status === "completed" ? <section className="import-result"><ResultCelebration fullCardWinner={winnerName(fullCardWinnerPlayerId)} lineWinner={winnerName(lineWinnerPlayerId)} /><p>Inicio: <strong>{formatGameTimestamp(startedAt)}</strong></p><p>Fin: <strong>{formatGameTimestamp(completedAt)}</strong></p><p>{calledSongs.length} canciones anunciadas en total.</p>{calledSongs.length > 0 ? <ol className="result-song-list">{calledSongs.map(({ song, songId }) => <li key={`result-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol> : null}<button className="button button-secondary" onClick={() => { void copyGameSummary(); }} type="button"><Icon name="copy" /> Copiar resumen</button>{copyFeedback ? <p className="copy-feedback" role="status">{copyFeedback}</p> : null}</section> : <p>Los resultados estarán disponibles al finalizar la partida.</p>,
       }}
