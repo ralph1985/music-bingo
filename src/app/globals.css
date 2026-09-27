@@ -116,11 +116,11 @@ a {
 .playback-error-status { margin: 16px 0; padding: 12px 14px; border: 1px solid #ff4f9a99; border-radius: 12px; background: #ff4f9a1c; color: #ffd6e7; line-height: 1.45; }.playback-error-status button { padding: 0; border: 0; background: transparent; color: var(--lime); font: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }.playback-error-status button:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
 @keyframes modal-rise { from { opacity: 0; transform: translateY(24px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 .site-footer { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; padding: 54px 20px 26px; color: var(--muted); font-size: .7rem; }
-.site-footer-main { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
-.footer-credit { line-height: 1.05; text-align: right; }
+.site-footer-main { display: flex; align-items: center; justify-content: center; gap: 5px; max-width: 100%; flex-wrap: nowrap; }
+.footer-credit, .footer-repository, .site-footer-version { white-space: nowrap; }
 .site-footer a { display: inline-flex; border-radius: 4px; outline-offset: 4px; }
 .site-footer a:focus-visible { outline: 2px solid var(--lime); }
-.site-footer img { width: 108px; height: auto; filter: brightness(0) invert(1); opacity: .9; }
+.site-footer img { width: 90px; height: auto; filter: brightness(0) invert(1); opacity: .9; }
 .site-footer .footer-repository { color: var(--lime); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .site-footer-version { color: var(--muted); font-family: var(--font-geist-mono); font-size: .65rem; text-decoration: underline; text-underline-offset: 3px; }
 .playlist-input { display: block; min-height: 148px; margin-top: 0; resize: vertical; line-height: 1.45; }

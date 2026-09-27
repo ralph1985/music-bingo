@@ -7,8 +7,7 @@ describe("Footer", () => {
   it("atribuye la web a conquense.dev con un enlace y logotipo", () => {
     const footer = renderToStaticMarkup(<Footer />);
 
-    expect(footer).toContain("Hecho<br/>");
-    expect(footer).toContain(">por</span>");
+    expect(footer).toContain(">Hecho por</span>");
     expect(footer).toContain('href="https://www.conquense.dev"');
     expect(footer).toContain('alt="conquense.dev"');
   });
@@ -25,5 +24,6 @@ describe("Footer", () => {
 
     expect(footer).toContain("v0.3.0");
     expect(footer).toContain('href="https://github.com/ralph1985/music-bingo/blob/develop/CHANGELOG.md"');
+    expect(footer).toContain('target="_blank"');
   });
 });
