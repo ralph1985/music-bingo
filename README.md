@@ -161,7 +161,7 @@ pnpm exec convex env set ADMIN_COMMAND_SECRET "<el-mismo-valor>"
    node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
    ```
 
-La aplicación solicita los permisos `playlist-read-private`, `playlist-read-collaborative` y `user-modify-playback-state`. El refresh token se cifra antes de guardarse en una cookie `HttpOnly` limitada a las rutas de administración. Spotify debe tener un dispositivo activo y una cuenta con permisos de reproducción; si una conexión anterior no tenía el permiso nuevo, hay que desconectarla y volver a conectarla.
+La aplicación solicita los permisos `playlist-read-private`, `playlist-read-collaborative`, `user-modify-playback-state` y `user-read-playback-state`. El refresh token se cifra antes de guardarse en una cookie `HttpOnly` limitada a las rutas de administración. Al anunciar, la aplicación consulta los dispositivos disponibles, prioriza el activo y reintenta una vez si cambia durante la reproducción. Spotify debe tener un dispositivo disponible y una cuenta con permisos de reproducción; si una conexión anterior no tenía el permiso nuevo, hay que desconectarla y volver a conectarla.
 
 ## Verificación
 
