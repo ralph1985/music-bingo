@@ -19,6 +19,16 @@ describe("admin command request", () => {
     });
   });
 
+  it("preserves a valid Spotify track URI in a game request", () => {
+    expect(parseCreateGameRequest({
+      joinCode: "FIESTA",
+      playlist: [{ artist: "ABBA", id: "song-1", spotifyUri: "spotify:track:track-1", title: "Dancing Queen" }],
+    })).toEqual({
+      joinCode: "FIESTA",
+      playlist: [{ artist: "ABBA", id: "song-1", spotifyUri: "spotify:track:track-1", title: "Dancing Queen" }],
+    });
+  });
+
   it("rejects malformed game requests", () => {
     expect(parseCreateGameRequest({ joinCode: "FIESTA", playlist: [{ id: "song-1" }] })).toBeNull();
   });

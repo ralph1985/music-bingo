@@ -106,9 +106,44 @@ describe("game storage", () => {
     await expect(t.query(internal.games.getByCode, { joinCode: "HORARIOS" })).resolves.toMatchObject({
       startedAt: new Date("2026-09-25T18:00:00.000Z").getTime(),
       completedAt: new Date("2026-09-25T18:42:00.000Z").getTime(),
+      endedAt: new Date("2026-09-25T18:42:00.000Z").getTime(),
       status: "completed",
     });
     vi.useRealTimers();
+  });
+
+  it("returns completed and cancelled games as administrative history summaries", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+
+    await t.mutation(internal.games.createGame, { joinCode: "FINALIZA", playlist });
+    await t.mutation(internal.games.finishGame, { joinCode: "FINALIZA" });
+    await t.mutation(internal.games.createGame, { joinCode: "CANCELA", playlist });
+    await t.mutation(internal.games.cancelGame, { joinCode: "CANCELA" });
+
+    await expect(t.query(internal.games.getAdminGameHistory, {})).resolves.toEqual(expect.arrayContaining([
+      expect.objectContaining({ joinCode: "FINALIZA", status: "completed", calledSongCount: 0, playerCount: 0 }),
+      expect.objectContaining({ joinCode: "CANCELA", status: "cancelled", calledSongCount: 0, playerCount: 0 }),
+    ]));
+  });
+
+  it("deletes only terminal games", async () => {
+    const t = convexTest(schema, modules);
+    const playlist = Array.from({ length: 24 }, (_, index) => ({
+      artist: `Artista ${index + 1}`,
+      id: `song-${index + 1}`,
+      title: `Canción ${index + 1}`,
+    }));
+
+    await t.mutation(internal.games.createGame, { joinCode: "BORRA01", playlist });
+    await expect(t.mutation(internal.games.deleteGame, { joinCode: "BORRA01" })).rejects.toThrow("Only completed or cancelled games can be deleted");
+    await t.mutation(internal.games.cancelGame, { joinCode: "BORRA01" });
+    await expect(t.mutation(internal.games.deleteGame, { joinCode: "BORRA01" })).resolves.toBe(true);
+    await expect(t.query(internal.games.getByCode, { joinCode: "BORRA01" })).resolves.toBeNull();
   });
 
   it("blocks card changes and claims after the host finishes a game", async () => {

@@ -4,6 +4,7 @@ import { v } from "convex/values";
 const songValidator = v.object({
   artist: v.string(),
   id: v.string(),
+  spotifyUri: v.optional(v.string()),
   title: v.string(),
 });
 
@@ -17,6 +18,7 @@ export default defineSchema({
   games: defineTable({
     calledSongIds: v.array(v.string()),
     completedAt: v.optional(v.number()),
+    endedAt: v.optional(v.number()),
     fullCardWinnerCardId: v.optional(v.union(v.string(), v.null())),
     fullCardWinnerPlayerId: v.union(v.id("players"), v.null()),
     joinCode: v.string(),

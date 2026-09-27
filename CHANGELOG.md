@@ -2,9 +2,20 @@
 
 Todos los cambios relevantes de Bingo Musical se documentan en este archivo.
 
-El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones siguen [Versionado Semántico](https://semver.org/lang/es/). La versión publicada en `main` corresponde a `0.1.0`, con el tag `v0.1.0` y su release de GitHub.
+El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones siguen [Versionado Semántico](https://semver.org/lang/es/). La versión publicada en `main` corresponde a `0.2.0`, con el tag `v0.2.0` y su release de GitHub.
 
 ## [Unreleased]
+
+## [0.3.0] - 2026-09-27
+
+### Añadido
+
+- Las canciones importadas desde Spotify conservan su URI y el botón **Reproducir y anunciar** cambia la reproducción en el dispositivo Spotify activo antes de registrar la canción en la partida.
+- El anfitrión puede anunciar una canción pendiente elegida aleatoriamente desde la pestaña **Anunciar**.
+- El historial de anuncios permite reproducir de nuevo una canción de Spotify sin duplicar el anuncio en la partida.
+- El panel de administración incluye un historial de partidas completadas y canceladas con filtros, resumen y detalle.
+- El historial permite borrar permanentemente una partida terminada o cancelada, incluidos sus jugadores, playlist y resultados, tras confirmar el código.
+- El control de reproducción de Spotify consulta los dispositivos disponibles, selecciona uno reproducible y reintenta si el dispositivo activo cambia.
 
 ## [0.2.0] - 2026-09-27
 
@@ -74,5 +85,6 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 - Respuestas de jugador limitadas a los datos necesarios para jugar.
 - Alertas y actualizaciones de seguridad de Dependabot activadas en GitHub.
 
-[unreleased]: https://github.com/ralph1985/music-bingo/compare/v0.2.0...develop
+[unreleased]: https://github.com/ralph1985/music-bingo/compare/v0.3.0...develop
+[0.3.0]: https://github.com/ralph1985/music-bingo/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ralph1985/music-bingo/compare/v0.1.0...v0.2.0

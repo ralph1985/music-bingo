@@ -1,4 +1,4 @@
-type Song = { artist: string; id: string; title: string };
+type Song = { artist: string; id: string; spotifyUri?: string; title: string };
 
 type CreateGameRequest = { joinCode: string; playlist: Song[] };
 type CallSongRequest = { joinCode: string; songId: string };
@@ -18,7 +18,10 @@ export function parseCreateGameRequest(value: unknown): CreateGameRequest | null
     if (!isRecord(song) || typeof song.id !== "string" || typeof song.title !== "string" || typeof song.artist !== "string") {
       return null;
     }
-    playlist.push({ id: song.id, title: song.title, artist: song.artist });
+    if (song.spotifyUri !== undefined && (typeof song.spotifyUri !== "string" || !/^spotify:track:[A-Za-z0-9_-]+$/.test(song.spotifyUri))) {
+      return null;
+    }
+    playlist.push({ id: song.id, title: song.title, artist: song.artist, ...(typeof song.spotifyUri === "string" ? { spotifyUri: song.spotifyUri } : {}) });
   }
 
   return { joinCode: value.joinCode, playlist };

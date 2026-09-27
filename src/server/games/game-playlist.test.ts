@@ -18,4 +18,12 @@ describe("prepareGamePlaylist", () => {
       { title: "Dancing Queen", artist: "ABBA" },
     ]);
   });
+
+  it("preserves Spotify track URIs for playback", () => {
+    expect(prepareGamePlaylist([
+      { artist: "ABBA", spotifyUri: "spotify:track:track-1", title: "Dancing Queen" },
+    ], 1)).toEqual([
+      { artist: "ABBA", id: "song-1", spotifyUri: "spotify:track:track-1", title: "Dancing Queen" },
+    ]);
+  });
 });

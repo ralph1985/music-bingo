@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { ADMIN_SESSION_COOKIE, hasAdminSession } from "@/server/auth/admin-session";
+import { SPOTIFY_RETURN_COOKIE } from "../connect/route";
 import { encryptSpotifyRefreshToken, verifySpotifyState } from "@/server/spotify/oauth";
 import { exchangeSpotifyToken } from "@/server/spotify/tokens";
 
@@ -18,16 +19,17 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
+  const returnTo = cookieStore.get(SPOTIFY_RETURN_COOKIE)?.value === "calls" ? "calls" : "setup";
 
   if (!hasAdminSession(session, sessionSecret)) return NextResponse.redirect(new URL("/admin", request.url));
   if (!session || !sessionSecret || !clientId || !clientSecret || !redirectUri || !encryptionKey || !code || !state || !verifySpotifyState(state, session, sessionSecret)) {
-    return NextResponse.redirect(new URL("/admin?spotify=error", request.url));
+    return adminSpotifyRedirect(request, "error", returnTo);
   }
 
   try {
     const token = await exchangeSpotifyToken({ clientId, clientSecret, code, redirectUri });
     if (!token.refreshToken) throw new Error("Spotify did not return a refresh token.");
-    const response = NextResponse.redirect(new URL("/admin?spotify=connected", request.url));
+    const response = adminSpotifyRedirect(request, "connected", returnTo);
     response.cookies.set(SPOTIFY_REFRESH_COOKIE, encryptSpotifyRefreshToken(token.refreshToken, encryptionKey), {
       httpOnly: true,
       maxAge: 60 * 60 * 24 * 30,
@@ -37,8 +39,23 @@ export async function GET(request: Request) {
     });
     return response;
   } catch {
-    return NextResponse.redirect(new URL("/admin?spotify=error", request.url));
+    return adminSpotifyRedirect(request, "error", returnTo);
   }
+}
+
+function adminSpotifyRedirect(request: Request, status: "connected" | "error", returnTo: "calls" | "setup"): NextResponse {
+  const destination = new URL("/admin", request.url);
+  destination.searchParams.set("spotify", status);
+  if (returnTo === "calls") destination.searchParams.set("tab", returnTo);
+  const response = NextResponse.redirect(destination);
+  response.cookies.set(SPOTIFY_RETURN_COOKIE, "", {
+    httpOnly: true,
+    maxAge: 0,
+    path: "/api/admin/spotify",
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  });
+  return response;
 }
 
 export { SPOTIFY_REFRESH_COOKIE };

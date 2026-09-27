@@ -4,12 +4,13 @@ import { describe, expect, it } from "vitest";
 import { AdminTabs, getAdminTabs } from "./admin-tabs";
 
 describe("getAdminTabs", () => {
-  it("keeps setup and room available before a game exists", () => {
+  it("keeps setup and history available before a game exists", () => {
     expect(getAdminTabs(null)).toEqual([
       { id: "setup", label: "Preparar", disabled: false },
       { id: "room", label: "Sala", disabled: true },
       { id: "calls", label: "Anunciar", disabled: true },
       { id: "results", label: "Resultados", disabled: true },
+      { id: "history", label: "Historial", disabled: false },
     ]);
   });
 
@@ -19,18 +20,21 @@ describe("getAdminTabs", () => {
       { id: "room", disabled: false },
       { id: "calls", disabled: true },
       { id: "results", disabled: true },
+      { id: "history", disabled: false },
     ]);
     expect(getAdminTabs("playing")).toMatchObject([
       { id: "setup", disabled: false },
       { id: "room", disabled: false },
       { id: "calls", disabled: false },
       { id: "results", disabled: true },
+      { id: "history", disabled: false },
     ]);
     expect(getAdminTabs("completed")).toMatchObject([
       { id: "setup", disabled: false },
       { id: "room", disabled: false },
       { id: "calls", disabled: false },
       { id: "results", disabled: false },
+      { id: "history", disabled: false },
     ]);
   });
 });
@@ -44,6 +48,7 @@ describe("AdminTabs", () => {
           room: <p>Sala contenido</p>,
           calls: <p>Anunciar contenido</p>,
           results: <p>Resultados contenido</p>,
+          history: <p>Historial contenido</p>,
         }}
       </AdminTabs>,
     );
@@ -56,6 +61,7 @@ describe("AdminTabs", () => {
     expect(markup).toContain('data-icon="users"');
     expect(markup).toContain('data-icon="radio"');
     expect(markup).toContain('data-icon="trophy"');
+    expect(markup).toContain('data-icon="history"');
     expect(markup).toContain("Preparar contenido");
     expect(markup).not.toContain("Sala contenido");
   });

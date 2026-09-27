@@ -1,6 +1,6 @@
 # Bingo Musical
 
-Aplicación web móvil para organizar y jugar un bingo musical presencial. La persona anfitriona prepara una playlist, comparte un código o QR y anuncia cada canción manualmente; cada jugador usa su propio cartón digital desde el móvil.
+Aplicación web móvil para organizar y jugar un bingo musical presencial. La persona anfitriona prepara una playlist, comparte un código o QR y anuncia cada canción desde el panel; con una playlist de Spotify conectada, el anuncio también cambia la reproducción en Spotify. Cada jugador usa su propio cartón digital desde el móvil.
 
 Producción: [bingo.conquense.dev](https://bingo.conquense.dev)
 
@@ -18,7 +18,7 @@ Historial de cambios: [CHANGELOG.md](CHANGELOG.md)
 
 ## Alcance y reglas de juego
 
-La música se reproduce fuera de la aplicación. El anfitrión elige y anuncia manualmente una canción de la lista cada vez que suena; Bingo Musical no reproduce música ni sincroniza la reproducción con Spotify.
+La música se reproduce fuera de la aplicación. El anfitrión elige una canción en la pestaña **Anunciar**; si procede de una playlist importada desde Spotify y la cuenta conectada tiene un dispositivo activo, el botón **Reproducir y anunciar** cambia la reproducción en Spotify y registra la canción para los jugadores. Las listas manuales siguen permitiendo anuncios sin control de Spotify.
 
 | Regla | Comportamiento |
 | --- | --- |
@@ -38,7 +38,7 @@ La aplicación valida las reclamaciones contra las canciones anunciadas por el a
 2. Importa una lista de canciones y revisa la previsualización.
 3. Crea la partida. La sala muestra un código, un enlace y un QR para los jugadores.
 4. Espera a que se unan al menos dos personas y pulsa **Iniciar partida**.
-5. Reproduce la música por el medio que prefieras y usa la pestaña **Anunciar** para registrar cada canción que suena.
+5. Usa la pestaña **Anunciar** para seleccionar cada canción o **Anunciar canción aleatoria** para elegir una pendiente al azar. Las canciones importadas desde Spotify se pueden **Reproducir y anunciar**; las listas manuales se registran con **Anunciar**. El historial permite **Reproducir de nuevo** una canción ya anunciada sin duplicarla en la partida.
 6. Consulta ganadores e historial en **Resultados**. Puedes copiar un resumen o preparar una nueva partida.
 
 ### Formatos de importación manual
@@ -56,7 +56,7 @@ También se acepta CSV con columnas `Título`/`Artista` o `Title`/`Artist`. Las 
 
 La importación de Spotify es opcional y requiere configurar OAuth. Desde el panel de anfitrión, conecta una cuenta que tenga acceso a la playlist, pega su URL o URI y revisa las canciones importadas antes de crear la partida.
 
-Funciona con playlists accesibles desde la cuenta conectada, incluidas las propias, colaborativas o guardadas en la biblioteca. La integración solo lee los datos de la playlist; no inicia reproducción ni controla Spotify.
+Funciona con playlists accesibles desde la cuenta conectada, incluidas las propias, colaborativas o guardadas en la biblioteca. Las canciones conservan su URI de Spotify durante la creación de la partida para que **Reproducir y anunciar** pueda iniciar esa canción en el dispositivo activo de la misma cuenta.
 
 ## Jugar desde el móvil
 
@@ -74,7 +74,7 @@ Durante una partida se requiere conexión. La aplicación conserva únicamente l
 | Interfaz | Next.js App Router, React y TypeScript. |
 | Estado compartido | Convex: partidas, jugadores, cartones, marcas y validación de premios. |
 | Administración | Rutas de servidor de Next.js protegidas con sesión de administrador. |
-| Integración musical | Spotify Web API mediante OAuth Authorization Code, solo para importar playlists. |
+| Integración musical | Spotify Web API mediante OAuth Authorization Code para importar playlists y controlar el inicio de canciones seleccionadas. |
 | Código QR | Generado en el cliente con `qrcode`. |
 | Despliegue | Vercel para la aplicación y Convex para el backend en tiempo real. |
 | Pruebas | Vitest para unidad e integración y Playwright para el flujo de navegador. |
@@ -161,7 +161,7 @@ pnpm exec convex env set ADMIN_COMMAND_SECRET "<el-mismo-valor>"
    node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
    ```
 
-La aplicación solicita los permisos `playlist-read-private` y `playlist-read-collaborative`. El refresh token se cifra antes de guardarse en una cookie `HttpOnly` limitada a las rutas de administración.
+La aplicación solicita los permisos `playlist-read-private`, `playlist-read-collaborative`, `user-modify-playback-state` y `user-read-playback-state`. El refresh token se cifra antes de guardarse en una cookie `HttpOnly` limitada a las rutas de administración. Al anunciar, la aplicación consulta los dispositivos disponibles, prioriza el activo y reintenta una vez si cambia durante la reproducción. Spotify debe tener un dispositivo disponible y una cuenta con permisos de reproducción; si una conexión anterior no tenía el permiso nuevo, hay que desconectarla y volver a conectarla.
 
 ## Verificación
 
