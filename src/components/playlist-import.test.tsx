@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import PlaylistImport, { buildGameSummary, CancelGameConfirmation, getCreateGameReadiness, getTabAfterStartingGame, shouldShowNewGameButton, SpotifyImportFeedback } from "./playlist-import";
+import PlaylistImport, { buildGameSummary, CancelGameConfirmation, getCreateGameReadiness, getTabAfterStartingGame, pickRandomSongId, shouldShowNewGameButton, SpotifyImportFeedback } from "./playlist-import";
 
 describe("PlaylistImport", () => {
   it("keeps game creation unavailable until a playlist has been reviewed", () => {
@@ -45,6 +45,12 @@ describe("PlaylistImport", () => {
 
   it("takes the host straight to announcing songs when the game starts", () => {
     expect(getTabAfterStartingGame()).toBe("calls");
+  });
+
+  it("selects a pending song at random without selecting from an empty list", () => {
+    expect(pickRandomSongId(["song-1", "song-2", "song-3"], 0)).toBe("song-1");
+    expect(pickRandomSongId(["song-1", "song-2", "song-3"], 0.99)).toBe("song-3");
+    expect(pickRandomSongId([], 0.5)).toBeNull();
   });
 
   it("shows Spotify import errors beside the import controls", () => {

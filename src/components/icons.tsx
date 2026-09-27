@@ -17,6 +17,7 @@ export type IconName =
   | "play"
   | "qr-code"
   | "radio"
+  | "shuffle"
   | "sliders"
   | "spotify"
   | "ticket"
@@ -64,6 +65,7 @@ const iconPaths: Record<IconName, React.ReactNode> = {
   play: <path d="m9 6 9 6-9 6V6Z" />,
   "qr-code": <><rect height="6" width="6" x="3" y="3" /><rect height="6" width="6" x="15" y="3" /><rect height="6" width="6" x="3" y="15" /><path d="M15 15h3v3h-3zM21 18v3h-3M15 21h3" /></>,
   radio: <><circle cx="12" cy="12" r="2" /><path d="M7 7a7 7 0 0 0 0 10" /><path d="M17 7a7 7 0 0 1 0 10" /><path d="M4 4a11 11 0 0 0 0 16" /><path d="M20 4a11 11 0 0 1 0 16" /></>,
+  shuffle: <><path d="M3 7h3c4 0 6 10 10 10h5" /><path d="m18 14 3 3-3 3" /><path d="M3 17h3c1.5 0 2.5-.8 3.3-1.8M14.7 8.8C15.5 7.8 16.5 7 18 7h3" /><path d="m18 4 3 3-3 3" /></>,
   sliders: <><path d="M4 7h16" /><path d="M4 17h16" /><circle cx="9" cy="7" r="2" /><circle cx="15" cy="17" r="2" /></>,
   spotify: <><circle cx="12" cy="12" r="9" /><path d="M7.5 10c3.7-1.1 6.8-.7 9.2.7" /><path d="M8.3 13c2.8-.8 5.1-.5 7 .5" /><path d="M9.1 15.5c1.8-.5 3.5-.3 4.9.4" /></>,
   ticket: <><path d="M4 7a2 2 0 0 0 2-2h12a2 2 0 0 0 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 0-2 2H6a2 2 0 0 0-2-2v-3a2 2 0 0 0 0-4V7Z" /><path d="M12 7v10" /></>,

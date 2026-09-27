@@ -34,6 +34,12 @@ export function getCreateGameReadiness(songCount: number, errorCount: number): {
       : { canCreate: false, message: `Faltan ${missingSongs} canciones válidas para crear la partida. Añádelas a la lista y vuelve a previsualizarla.` };
 }
 
+export function pickRandomSongId(songIds: string[], randomValue = Math.random()): string | null {
+  if (songIds.length === 0) return null;
+  const safeRandomValue = Number.isFinite(randomValue) ? Math.min(Math.max(randomValue, 0), 1) : 0;
+  return songIds[Math.min(songIds.length - 1, Math.floor(safeRandomValue * songIds.length))] ?? null;
+}
+
 export function SpotifyImportFeedback({ message }: { message: string | null }) {
   return message ? <p className="spotify-import-feedback" role="alert" aria-live="assertive">{message}</p> : null;
 }
@@ -384,6 +390,11 @@ export default function PlaylistImport() {
   const lastCalledSong = calledSongs.at(-1)?.song;
   const missingPlayersToStart = Math.max(0, 2 - players.length);
 
+  function callRandomSong() {
+    const randomSongId = pickRandomSongId(pendingSongs.map(({ songId }) => songId));
+    if (randomSongId) void callSong(randomSongId);
+  }
+
   return <section className="panel">
     {error ? <p role="alert">{error}</p> : null}
     <AdminTabs activeTab={activeTab} onTabChange={setActiveTab} status={createdGame?.status ?? null}>
@@ -448,7 +459,7 @@ export default function PlaylistImport() {
           {createdGame.status === "playing" ? <p className="calls-guidance" role="status">Partida iniciada. Elige una canción pendiente para anunciarla a los jugadores{playlistSongs.some(({ song }) => song.spotifyUri) ? " y cambiarla en Spotify" : ""}.</p> : null}
           {lastCalledSong ? <section className="import-result"><p className="field-label"><Icon name="volume" /> ÚLTIMA CANCIÓN ANUNCIADA</p><p><strong>{lastCalledSong.title}</strong> — {lastCalledSong.artist}</p></section> : <p>Aún no se ha anunciado ninguna canción.</p>}
           {calledSongs.length > 0 ? <section className="import-result"><p className="field-label"><Icon name="history" /> HISTORIAL DE CANCIONES</p><ol>{calledSongs.map(({ song, songId }) => <li key={`called-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol></section> : null}
-          {createdGame.status === "playing" ? <><p className="field-label" style={{ marginTop: 18 }}><Icon name="music" /> CANCIONES PENDIENTES</p>{pendingSongs.map(({ song, songId }) => <button className="button" disabled={pending} key={songId} onClick={() => callSong(songId)} type="button"><Icon name="music" /> {song.spotifyUri ? "Reproducir y anunciar" : "Anunciar"}: {song.title} — {song.artist}</button>)}</> : null}
+          {createdGame.status === "playing" ? <><p className="field-label" style={{ marginTop: 18 }}><Icon name="music" /> CANCIONES PENDIENTES</p><button className="button button-secondary" disabled={pending || pendingSongs.length === 0} onClick={callRandomSong} type="button"><Icon name="shuffle" /> Anunciar canción aleatoria</button>{pendingSongs.map(({ song, songId }) => <button className="button" disabled={pending} key={songId} onClick={() => callSong(songId)} type="button"><Icon name="music" /> {song.spotifyUri ? "Reproducir y anunciar" : "Anunciar"}: {song.title} — {song.artist}</button>)}</> : null}
         </div> : <p>Inicia la partida para empezar a anunciar canciones.</p>,
         results: createdGame?.status === "completed" ? <section className="import-result"><ResultCelebration fullCardWinner={winnerName(fullCardWinnerPlayerId)} lineWinner={winnerName(lineWinnerPlayerId)} /><p>Inicio: <strong>{formatGameTimestamp(startedAt)}</strong></p><p>Fin: <strong>{formatGameTimestamp(completedAt)}</strong></p><p>{calledSongs.length} canciones anunciadas en total.</p>{calledSongs.length > 0 ? <ol className="result-song-list">{calledSongs.map(({ song, songId }) => <li key={`result-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol> : null}<button className="button button-secondary" onClick={() => { void copyGameSummary(); }} type="button"><Icon name="copy" /> Copiar resumen</button>{copyFeedback ? <p className="copy-feedback" role="status">{copyFeedback}</p> : null}</section> : <p>Los resultados estarán disponibles al finalizar la partida.</p>,
       }}
