@@ -49,8 +49,8 @@ Convex agent skills for common tasks can be installed by running
 
 ## Versiones y releases
 
-- Mantén los cambios futuros en `CHANGELOG.md` bajo `Unreleased` mientras estén en `develop`.
-- Al preparar una release aprobada, mueve los cambios incluidos a `## [x.y.z] - YYYY-MM-DD`, usando la misma versión en `package.json` y en el tag `v<x.y.z>`.
+- No mantengas una sección `Unreleased` en `CHANGELOG.md`; al preparar una versión, revisa el historial desde la última versión publicada y documenta entonces los cambios reales.
+- Al preparar una release aprobada, documenta los cambios incluidos bajo `## [x.y.z] - YYYY-MM-DD`, usando la misma versión en `package.json` y en el tag `v<x.y.z>`.
 - Aplica Versionado Semántico: `patch` para correcciones compatibles, `minor` para capacidades compatibles nuevas y `major` para cambios incompatibles.
 - Publica el tag sobre el commit exacto de `main` que está en producción y crea la GitHub Release desde ese tag; nunca etiquetes `develop` como si fuera producción.
 - Verifica después que el tag apunta al SHA esperado y que la release no es draft ni prerelease. No crees tags ni releases sin petición expresa del usuario.
