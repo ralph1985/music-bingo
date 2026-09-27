@@ -6,6 +6,7 @@ import { playerGameUrl } from "../server/games/player-game-url";
 import { AdminGameStatus, AdminTabId, AdminTabs } from "./admin-tabs";
 import { GameLifecycle, PlayerLobby, ResultCelebration } from "./host-game-status";
 import { Icon } from "./icons";
+import GameHistory from "./game-history";
 import QrCode from "./qr-code";
 
 type Song = { title: string; artist: string; spotifyUri?: string };
@@ -636,6 +637,7 @@ export default function PlaylistImport() {
           {playbackModalOpen && playbackError ? <PlaybackErrorModal message={playbackError} onClose={closePlaybackError} onRetry={retryFailedSong} operation={playbackAction} /> : null}
         </div> : <p>Inicia la partida para empezar a anunciar canciones.</p>,
         results: createdGame?.status === "completed" ? <section className="import-result"><ResultCelebration fullCardWinner={winnerName(fullCardWinnerPlayerId)} lineWinner={winnerName(lineWinnerPlayerId)} /><p>Inicio: <strong>{formatGameTimestamp(startedAt)}</strong></p><p>Fin: <strong>{formatGameTimestamp(completedAt)}</strong></p><p>{calledSongs.length} canciones anunciadas en total.</p>{calledSongs.length > 0 ? <ol className="result-song-list">{calledSongs.map(({ song, songId }) => <li key={`result-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol> : null}<button className="button button-secondary" onClick={() => { void copyGameSummary(); }} type="button"><Icon name="copy" /> Copiar resumen</button>{copyFeedback ? <p className="copy-feedback" role="status">{copyFeedback}</p> : null}</section> : <p>Los resultados estarán disponibles al finalizar la partida.</p>,
+        history: <GameHistory />,
       }}
     </AdminTabs>
   </section>;

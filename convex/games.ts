@@ -136,7 +136,7 @@ export const cancelGame = internalMutation({
       return null;
     }
 
-    await ctx.db.patch("games", game._id, { status: "cancelled" });
+    await ctx.db.patch("games", game._id, { endedAt: Date.now(), status: "cancelled" });
     return null;
   },
 });
@@ -153,7 +153,8 @@ export const finishGame = internalMutation({
       return null;
     }
 
-    await ctx.db.patch("games", game._id, { completedAt: Date.now(), status: "completed" });
+    const endedAt = Date.now();
+    await ctx.db.patch("games", game._id, { completedAt: endedAt, endedAt, status: "completed" });
     return null;
   },
 });
@@ -216,6 +217,40 @@ export const getAdminGameByCode = internalQuery({
       .withIndex("by_gameId", (q) => q.eq("gameId", game._id))
       .collect();
     return { game, players: players.map((player) => ({ id: player._id, name: player.name })) };
+  },
+});
+
+export const getAdminGameHistory = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const completedGames = await ctx.db
+      .query("games")
+      .withIndex("by_status", (q) => q.eq("status", "completed"))
+      .collect();
+    const cancelledGames = await ctx.db
+      .query("games")
+      .withIndex("by_status", (q) => q.eq("status", "cancelled"))
+      .collect();
+
+    return await Promise.all([...completedGames, ...cancelledGames]
+      .sort((left, right) => (right.endedAt ?? right.completedAt ?? right._creationTime) - (left.endedAt ?? left.completedAt ?? left._creationTime))
+      .map(async (game) => {
+        const players = await ctx.db
+          .query("players")
+          .withIndex("by_gameId", (q) => q.eq("gameId", game._id))
+          .collect();
+        return {
+          calledSongCount: game.calledSongIds.length,
+          completedAt: game.completedAt ?? null,
+          endedAt: game.endedAt ?? game.completedAt ?? null,
+          fullCardWinnerName: players.find((player) => player._id === game.fullCardWinnerPlayerId)?.name ?? null,
+          joinCode: game.joinCode,
+          lineWinnerName: players.find((player) => player._id === game.lineWinnerPlayerId)?.name ?? null,
+          playerCount: players.length,
+          startedAt: game.startedAt ?? null,
+          status: game.status,
+        };
+      }));
   },
 });
 

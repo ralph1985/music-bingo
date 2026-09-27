@@ -82,12 +82,18 @@ http.route({
     }
 
     const joinCode = new URL(request.url).searchParams.get("joinCode");
+    const history = new URL(request.url).searchParams.get("history") === "true";
+    if (history) {
+      const games = await ctx.runQuery(internal.games.getAdminGameHistory, {});
+      return Response.json({ games });
+    }
     const game = joinCode
       ? await ctx.runQuery(internal.games.getAdminGameByCode, { joinCode })
       : await ctx.runQuery(internal.games.getActiveAdminGame, {});
     return Response.json(game ? {
       calledSongIds: game.game.calledSongIds,
       completedAt: game.game.completedAt ?? null,
+      endedAt: game.game.endedAt ?? game.game.completedAt ?? null,
       fullCardWinnerPlayerId: game.game.fullCardWinnerPlayerId,
       joinCode: game.game.joinCode,
       lineWinnerPlayerId: game.game.lineWinnerPlayerId,

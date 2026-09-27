@@ -166,5 +166,40 @@ a {
 .admin-tab:disabled { cursor: not-allowed; opacity: .42; }
 .admin-tab:focus-visible { outline: 3px solid var(--pink); outline-offset: 2px; }
 .admin-tabpanel { margin-top: 14px; }
+.game-history { display: grid; gap: 14px; }
+.game-history-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.game-history-heading h2 { margin-top: 3px; font-size: clamp(1.45rem, 5vw, 2rem); }
+.game-history-count { flex: 0 0 auto; margin-top: 5px; color: var(--muted); font-size: .75rem; }
+.game-history-controls { display: grid; gap: 7px; margin-top: 4px; }
+.game-history-controls .field-label:not(:first-child) { margin-top: 5px; }
+.game-history-list { display: grid; gap: 12px; margin-top: 4px; }
+.game-history-card { display: grid; gap: 11px; padding: 15px; border: 1px solid #ffffff1f; border-radius: 14px; background: #ffffff08; }
+.game-history-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.game-history-card-header h3 { margin-top: 5px; font-size: 1.35rem; letter-spacing: .08em; }
+.game-history-card-header time { color: var(--muted); font-size: .75rem; text-align: right; }
+.game-history-status { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 999px; font-size: .68rem; font-weight: 800; letter-spacing: .04em; }
+.game-history-status-completed { background: #c6ff4320; color: var(--lime); }
+.game-history-status-cancelled { background: #ff4f9a20; color: #ff9ec6; }
+.game-history-facts { display: flex; flex-wrap: wrap; gap: 10px 16px; color: #d8cfe0; font-size: .82rem; }
+.game-history-facts span { display: inline-flex; align-items: center; gap: 5px; }
+.game-history-facts .icon { color: var(--muted); }
+.game-history-winners { color: var(--muted); font-size: .82rem; line-height: 1.45; }
+.game-history-card .button { width: 100%; margin: 0; }
+.game-history-empty { display: grid; justify-items: center; gap: 8px; padding: 34px 16px; border: 1px dashed #ffffff2e; border-radius: 14px; color: var(--muted); text-align: center; }
+.game-history-empty .icon { width: 2rem; height: 2rem; color: var(--violet); }
+.game-history-error { padding: 11px 13px; border: 1px solid #ff4f9a66; border-radius: 10px; background: #ff4f9a14; color: #ffc2db; }
+.game-history-detail { width: min(100%, 620px); max-height: min(88vh, 760px); overflow-y: auto; }
+.game-history-detail .game-history-heading { margin-bottom: 4px; }
+.game-history-detail-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 8px 0 18px; }
+.game-history-detail-facts div { padding: 10px; border-radius: 10px; background: #ffffff0b; }
+.game-history-detail-facts dt { color: var(--muted); font-size: .68rem; font-weight: 800; text-transform: uppercase; }
+.game-history-detail-facts dd { margin-top: 4px; font-size: .85rem; }
+.game-history-detail h3 { margin-top: 16px; font-size: 1rem; }
+.game-history-winner-detail { padding: 11px 13px; border-left: 3px solid var(--lime); background: #c6ff4310; }
+.game-history-player-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; list-style: none; }
+.game-history-player-list li { padding: 6px 9px; border-radius: 999px; background: #ffffff0c; color: #e8dfef; font-size: .82rem; }
+.game-history-song-list { display: grid; gap: 6px; max-height: 220px; margin-top: 8px; padding: 10px; overflow-y: auto; border-radius: 10px; background: #ffffff08; scrollbar-color: #ffffff4d transparent; }
+.game-history-song-list p { color: #e8dfef; font-size: .82rem; line-height: 1.35; }
+.game-history-detail > .button:last-child { width: 100%; margin: 18px 0 0; }
 @media (max-width: 420px) { .game-lifecycle ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }.game-lifecycle li { overflow-wrap: normal; } }
-@media (min-width: 620px) { .entry-grid, .admin-tablist { grid-template-columns: repeat(4, minmax(0, 1fr)); }.entry-grid { grid-template-columns: 1fr 1fr; }.hero { padding-top: 110px; } }
+@media (min-width: 620px) { .entry-grid { grid-template-columns: 1fr 1fr; }.admin-tablist { grid-template-columns: repeat(5, minmax(0, 1fr)); }.game-history-controls { grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; }.game-history-controls .field-label:not(:first-child) { margin-top: 0; }.game-history-card .button { width: auto; justify-self: start; }.hero { padding-top: 110px; } }

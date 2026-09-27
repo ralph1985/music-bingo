@@ -12,6 +12,18 @@ type CallSongCommandInput = Omit<CreateGameCommandInput, "playlist"> & {
   songId: string;
 };
 
+export type AdminGameHistoryItem = {
+  calledSongCount: number;
+  completedAt: number | null;
+  endedAt: number | null;
+  fullCardWinnerName: string | null;
+  joinCode: string;
+  lineWinnerName: string | null;
+  playerCount: number;
+  startedAt: number | null;
+  status: "cancelled" | "completed";
+};
+
 export class ConvexCommandError extends Error {
   constructor(readonly status: number, message = "No se pudo crear la partida.") {
     super(message);
@@ -137,7 +149,7 @@ export async function getActiveGameCommand({
   fetcher = fetch,
   joinCode,
   secret,
-}: Pick<CreateGameCommandInput, "cloudUrl" | "fetcher" | "secret"> & { joinCode?: string }): Promise<{ calledSongIds: string[]; completedAt: number | null; fullCardWinnerPlayerId: string | null; joinCode: string; lineWinnerPlayerId: string | null; players: { id: string; name: string }[]; playlist: Song[]; startedAt: number | null; status: string } | null> {
+}: Pick<CreateGameCommandInput, "cloudUrl" | "fetcher" | "secret"> & { joinCode?: string }): Promise<{ calledSongIds: string[]; completedAt: number | null; endedAt: number | null; fullCardWinnerPlayerId: string | null; joinCode: string; lineWinnerPlayerId: string | null; players: { id: string; name: string }[]; playlist: Song[]; startedAt: number | null; status: string } | null> {
   const url = new URL(`${deriveConvexSiteUrl(cloudUrl)}/admin/games`);
   if (joinCode) url.searchParams.set("joinCode", joinCode);
   const response = await fetcher(url.toString(), {
@@ -149,7 +161,7 @@ export async function getActiveGameCommand({
     throw new ConvexCommandError(response.status);
   }
 
-  const body = await response.json() as { calledSongIds?: unknown; completedAt?: unknown; fullCardWinnerPlayerId?: unknown; joinCode?: unknown; lineWinnerPlayerId?: unknown; players?: unknown; playlist?: unknown; startedAt?: unknown; status?: unknown };
+  const body = await response.json() as { calledSongIds?: unknown; completedAt?: unknown; endedAt?: unknown; fullCardWinnerPlayerId?: unknown; joinCode?: unknown; lineWinnerPlayerId?: unknown; players?: unknown; playlist?: unknown; startedAt?: unknown; status?: unknown };
   if (typeof body.joinCode !== "string" || !Array.isArray(body.playlist) || !Array.isArray(body.calledSongIds) || !Array.isArray(body.players)) {
     return null;
   }
@@ -157,8 +169,32 @@ export async function getActiveGameCommand({
   const calledSongIds = body.calledSongIds.filter((songId): songId is string => typeof songId === "string");
   const players = body.players.flatMap((player) => typeof player === "object" && player !== null && typeof (player as { id?: unknown }).id === "string" && typeof (player as { name?: unknown }).name === "string" ? [{ id: (player as { id: string }).id, name: (player as { name: string }).name }] : []);
   return playlist.length === body.playlist.length && players.length === body.players.length
-    ? { calledSongIds, completedAt: typeof body.completedAt === "number" ? body.completedAt : null, fullCardWinnerPlayerId: typeof body.fullCardWinnerPlayerId === "string" ? body.fullCardWinnerPlayerId : null, joinCode: body.joinCode, lineWinnerPlayerId: typeof body.lineWinnerPlayerId === "string" ? body.lineWinnerPlayerId : null, players, playlist, startedAt: typeof body.startedAt === "number" ? body.startedAt : null, status: typeof body.status === "string" ? body.status : "waiting" }
+    ? { calledSongIds, completedAt: typeof body.completedAt === "number" ? body.completedAt : null, endedAt: typeof body.endedAt === "number" ? body.endedAt : null, fullCardWinnerPlayerId: typeof body.fullCardWinnerPlayerId === "string" ? body.fullCardWinnerPlayerId : null, joinCode: body.joinCode, lineWinnerPlayerId: typeof body.lineWinnerPlayerId === "string" ? body.lineWinnerPlayerId : null, players, playlist, startedAt: typeof body.startedAt === "number" ? body.startedAt : null, status: typeof body.status === "string" ? body.status : "waiting" }
     : null;
+}
+
+export async function getGameHistoryCommand({
+  cloudUrl,
+  fetcher = fetch,
+  secret,
+}: Pick<CreateGameCommandInput, "cloudUrl" | "fetcher" | "secret">): Promise<AdminGameHistoryItem[]> {
+  const url = new URL(`${deriveConvexSiteUrl(cloudUrl)}/admin/games`);
+  url.searchParams.set("history", "true");
+  const response = await fetcher(url.toString(), {
+    method: "GET",
+    headers: { "x-admin-command-secret": secret },
+  });
+
+  if (!response.ok) {
+    throw new ConvexCommandError(response.status, "No se pudo consultar el historial de partidas.");
+  }
+
+  const body = await response.json() as { games?: unknown };
+  if (!Array.isArray(body.games)) {
+    throw new Error("El historial de partidas devolvió una respuesta inválida.");
+  }
+
+  return body.games.flatMap((game) => isGameHistoryItem(game) ? [game] : []);
 }
 
 function isSong(value: unknown): value is Song {
@@ -168,6 +204,20 @@ function isSong(value: unknown): value is Song {
     && typeof (value as Song).title === "string"
     && typeof (value as Song).artist === "string"
     && (spotifyUri === undefined || (typeof spotifyUri === "string" && /^spotify:track:[A-Za-z0-9_-]+$/.test(spotifyUri)));
+}
+
+function isGameHistoryItem(value: unknown): value is AdminGameHistoryItem {
+  if (typeof value !== "object" || value === null) return false;
+  const item = value as Partial<AdminGameHistoryItem>;
+  return (item.status === "cancelled" || item.status === "completed")
+    && typeof item.calledSongCount === "number"
+    && (item.completedAt === null || typeof item.completedAt === "number")
+    && (item.endedAt === null || typeof item.endedAt === "number")
+    && (item.fullCardWinnerName === null || typeof item.fullCardWinnerName === "string")
+    && typeof item.joinCode === "string"
+    && (item.lineWinnerName === null || typeof item.lineWinnerName === "string")
+    && typeof item.playerCount === "number"
+    && (item.startedAt === null || typeof item.startedAt === "number");
 }
 
 export function deriveConvexSiteUrl(cloudUrl: string): string {

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { ConvexCommandError, callSongCommand, cancelGameCommand, createGameCommand, deriveConvexSiteUrl, finishGameCommand, getActiveGameCommand, startGameCommand } from "./admin-command";
+import { ConvexCommandError, callSongCommand, cancelGameCommand, createGameCommand, deriveConvexSiteUrl, finishGameCommand, getActiveGameCommand, getGameHistoryCommand, startGameCommand } from "./admin-command";
 
 describe("admin Convex command", () => {
   it("derives the Convex HTTP site URL from the configured cloud URL", () => {
@@ -109,7 +109,7 @@ describe("admin Convex command", () => {
       cloudUrl: "https://example.convex.cloud",
       secret: "shared-test-secret",
       fetcher,
-    })).resolves.toEqual({ calledSongIds: [], completedAt: 1_790_361_720_000, fullCardWinnerPlayerId: null, joinCode: "FIESTA", lineWinnerPlayerId: null, players: [], playlist: [], startedAt: 1_790_359_200_000, status: "waiting" });
+    })).resolves.toEqual({ calledSongIds: [], completedAt: 1_790_361_720_000, endedAt: null, fullCardWinnerPlayerId: null, joinCode: "FIESTA", lineWinnerPlayerId: null, players: [], playlist: [], startedAt: 1_790_359_200_000, status: "waiting" });
 
     expect(fetcher).toHaveBeenCalledWith("https://example.convex.site/admin/games", {
       method: "GET",
@@ -154,6 +154,31 @@ describe("admin Convex command", () => {
         "x-admin-command-secret": "shared-test-secret",
       },
       body: JSON.stringify({ joinCode: "FIESTA" }),
+    });
+  });
+
+  it("reads only the summarized game history from the administrative endpoint", async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ games: [{
+      calledSongCount: 12,
+      completedAt: 1_790_361_720_000,
+      endedAt: 1_790_361_720_000,
+      fullCardWinnerName: "Ana",
+      joinCode: "FIESTA",
+      lineWinnerName: "Luis",
+      playerCount: 8,
+      startedAt: 1_790_359_200_000,
+      status: "completed",
+    }] }), { status: 200 }));
+
+    await expect(getGameHistoryCommand({
+      cloudUrl: "https://example.convex.cloud",
+      secret: "shared-test-secret",
+      fetcher,
+    })).resolves.toEqual([expect.objectContaining({ joinCode: "FIESTA", status: "completed" })]);
+
+    expect(fetcher).toHaveBeenCalledWith("https://example.convex.site/admin/games?history=true", {
+      method: "GET",
+      headers: { "x-admin-command-secret": "shared-test-secret" },
     });
   });
 });

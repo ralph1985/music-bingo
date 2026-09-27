@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { ADMIN_SESSION_COOKIE, hasAdminSession } from "@/server/auth/admin-session";
-import { cancelGameCommand, getActiveGameCommand } from "@/server/convex/admin-command";
+import { cancelGameCommand, getActiveGameCommand, getGameHistoryCommand } from "@/server/convex/admin-command";
 import { createAdminGame } from "@/server/games/create-admin-game";
 import { ImportedSong } from "@/server/music/playlist-import";
 
@@ -86,12 +86,20 @@ export async function GET(request: Request) {
   }
 
   try {
-    const joinCode = new URL(request.url).searchParams.get("joinCode") ?? undefined;
+    const searchParams = new URL(request.url).searchParams;
+    const historyRequested = searchParams.get("history") === "true";
+    if (historyRequested) {
+      return NextResponse.json({ games: await getGameHistoryCommand({ cloudUrl, secret }) }, {
+        headers: { "cache-control": "no-store" },
+      });
+    }
+    const joinCode = searchParams.get("joinCode") ?? undefined;
     return NextResponse.json(await getActiveGameCommand({ cloudUrl, joinCode, secret }), {
       headers: { "cache-control": "no-store" },
     });
   } catch {
-    return NextResponse.json({ error: "No se pudo consultar la partida activa." }, { status: 422 });
+    const historyRequested = new URL(request.url).searchParams.get("history") === "true";
+    return NextResponse.json({ error: historyRequested ? "No se pudo consultar el historial de partidas." : "No se pudo consultar la partida activa." }, { status: 422 });
   }
 }
 

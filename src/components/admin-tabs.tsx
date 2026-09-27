@@ -4,13 +4,14 @@ import { KeyboardEvent, ReactNode } from "react";
 
 import { Icon, type IconName } from "./icons";
 
-export type AdminTabId = "setup" | "room" | "calls" | "results";
+export type AdminTabId = "setup" | "room" | "calls" | "results" | "history";
 export type AdminGameStatus = "waiting" | "playing" | "completed";
 
 type AdminTab = { id: AdminTabId; label: string; disabled: boolean };
 
 const tabIcons: Record<AdminTabId, IconName> = {
   calls: "radio",
+  history: "history",
   results: "trophy",
   room: "users",
   setup: "sliders",
@@ -29,6 +30,7 @@ export function getAdminTabs(status: AdminGameStatus | null): AdminTab[] {
     { id: "room", label: "Sala", disabled: status === null },
     { id: "calls", label: "Anunciar", disabled: status !== "playing" && status !== "completed" },
     { id: "results", label: "Resultados", disabled: status !== "completed" },
+    { id: "history", label: "Historial", disabled: false },
   ];
 }
 
