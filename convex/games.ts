@@ -15,6 +15,7 @@ type StoredCard = GeneratedCard;
 const songValidator = v.object({
   artist: v.string(),
   id: v.string(),
+  spotifyUri: v.optional(v.string()),
   title: v.string(),
 });
 
@@ -265,7 +266,11 @@ export const joinPlayer = mutation({
       throw new Error("El número de cartones debe estar entre 1 y 4.");
     }
 
-    const cards = generateCards({ cardCount, playerIdentity: args.playerIdentity, playlist: game.playlist });
+    const cards = generateCards({
+      cardCount,
+      playerIdentity: args.playerIdentity,
+      playlist: game.playlist.map(({ artist, id, title }) => ({ artist, id, title })),
+    });
     const playerId = await ctx.db.insert("players", {
       cards,
       cols: CARD_COLS,

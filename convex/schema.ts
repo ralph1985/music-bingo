@@ -4,6 +4,7 @@ import { v } from "convex/values";
 const songValidator = v.object({
   artist: v.string(),
   id: v.string(),
+  spotifyUri: v.optional(v.string()),
   title: v.string(),
 });
 

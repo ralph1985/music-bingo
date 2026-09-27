@@ -1,4 +1,5 @@
 export type ImportedSong = {
+  spotifyUri?: string;
   title: string;
   artist: string;
 };

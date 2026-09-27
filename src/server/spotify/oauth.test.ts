@@ -12,7 +12,7 @@ describe("Spotify OAuth helpers", () => {
     }));
 
     expect(url.origin).toBe("https://accounts.spotify.com");
-    expect(url.searchParams.get("scope")).toBe("playlist-read-private playlist-read-collaborative");
+    expect(url.searchParams.get("scope")).toBe("playlist-read-private playlist-read-collaborative user-modify-playback-state");
     expect(verifySpotifyState(url.searchParams.get("state")!, "admin-session", "session-secret")).toBe(true);
     expect(verifySpotifyState(url.searchParams.get("state")!, "other-session", "session-secret")).toBe(false);
   });

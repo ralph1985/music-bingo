@@ -1,4 +1,4 @@
-type Song = { artist: string; id: string; title: string };
+type Song = { artist: string; id: string; spotifyUri?: string; title: string };
 
 type CreateGameCommandInput = {
   cloudUrl: string;
@@ -162,10 +162,12 @@ export async function getActiveGameCommand({
 }
 
 function isSong(value: unknown): value is Song {
+  const spotifyUri = typeof value === "object" && value !== null ? (value as Song).spotifyUri : undefined;
   return typeof value === "object" && value !== null
     && typeof (value as Song).id === "string"
     && typeof (value as Song).title === "string"
-    && typeof (value as Song).artist === "string";
+    && typeof (value as Song).artist === "string"
+    && (spotifyUri === undefined || (typeof spotifyUri === "string" && /^spotify:track:[A-Za-z0-9_-]+$/.test(spotifyUri)));
 }
 
 export function deriveConvexSiteUrl(cloudUrl: string): string {

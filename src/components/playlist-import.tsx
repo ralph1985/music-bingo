@@ -8,7 +8,7 @@ import { GameLifecycle, PlayerLobby, ResultCelebration } from "./host-game-statu
 import { Icon } from "./icons";
 import QrCode from "./qr-code";
 
-type Song = { title: string; artist: string };
+type Song = { title: string; artist: string; spotifyUri?: string };
 type ImportResult = { songs: Song[]; errors: { line: number; message: string }[] };
 type AdminPlayer = { id: string; name: string };
 type RoomAction = "starting" | "finishing" | "cancelling" | null;
@@ -65,9 +65,15 @@ export function buildGameSummary({ bingoWinner, calledSongs, completedAt, joinCo
 }
 
 function isSong(value: unknown): value is Song {
+  const spotifyUri = typeof value === "object" && value !== null ? (value as Song).spotifyUri : undefined;
   return typeof value === "object" && value !== null
     && typeof (value as Song).title === "string"
-    && typeof (value as Song).artist === "string";
+    && typeof (value as Song).artist === "string"
+    && (spotifyUri === undefined || (typeof spotifyUri === "string" && /^spotify:track:[A-Za-z0-9_-]+$/.test(spotifyUri)));
+}
+
+function formatSongs(songs: Song[]): string {
+  return songs.map((song) => `${song.title};${song.artist}`).join("\n");
 }
 
 export default function PlaylistImport() {
@@ -85,6 +91,7 @@ export default function PlaylistImport() {
   const [pending, setPending] = useState(false);
   const [players, setPlayers] = useState<AdminPlayer[]>([]);
   const [playlistText, setPlaylistText] = useState("");
+  const [previewedPlaylistText, setPreviewedPlaylistText] = useState("");
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [spotifyError, setSpotifyError] = useState<string | null>(null);
   const [spotifyPlaylist, setSpotifyPlaylist] = useState("");
@@ -148,15 +155,20 @@ export default function PlaylistImport() {
     }
 
     setResult(await response.json() as ImportResult);
+    setPreviewedPlaylistText(typeof text === "string" ? text : "");
   }
 
   async function createGame() {
     setPending(true);
     setError(null);
+    const body: { songs?: Song[]; text: string } = { text: playlistText };
+    if (result && previewedPlaylistText === playlistText) {
+      body.songs = result.songs;
+    }
     const response = await fetch("/api/admin/games", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text: playlistText }),
+      body: JSON.stringify(body),
     });
     setPending(false);
 
@@ -193,7 +205,9 @@ export default function PlaylistImport() {
         setSpotifyError("Spotify devolvió una playlist inválida.");
         return;
       }
-      setPlaylistText(songs.map((song) => `${song.title};${song.artist}`).join("\n"));
+      const importedText = formatSongs(songs);
+      setPlaylistText(importedText);
+      setPreviewedPlaylistText(importedText);
       setResult({ errors: [], songs });
       setSpotifyPlaylist("");
     } catch {
@@ -235,19 +249,24 @@ export default function PlaylistImport() {
 
     setPending(true);
     setError(null);
-    const response = await fetch("/api/admin/calls", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ joinCode: createdGame.joinCode, songId }),
-    });
-    setPending(false);
+    try {
+      const response = await fetch("/api/admin/calls", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ joinCode: createdGame.joinCode, songId }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null) as { error?: unknown } | null;
+        setError(typeof body?.error === "string" ? body.error : "No se pudo anunciar la canción.");
+        return;
+      }
 
-    if (!response.ok) {
-      setError("No se pudo anunciar la canción.");
-      return;
+      setCalledSongIds((current) => [...current, songId]);
+    } catch {
+      setError("No se pudo contactar con la sala. Inténtalo de nuevo.");
+    } finally {
+      setPending(false);
     }
-
-    setCalledSongIds((current) => [...current, songId]);
   }
 
   async function cancelGame() {
@@ -330,6 +349,7 @@ export default function PlaylistImport() {
     setResult(null);
     setStartedAt(null);
     setPlaylistText("");
+    setPreviewedPlaylistText("");
     setActiveTab("setup");
   }
 
@@ -425,10 +445,10 @@ export default function PlaylistImport() {
           {copyFeedback ? <p className="copy-feedback" role="status">{copyFeedback}</p> : null}
         </div> : <p>Crea una partida en Preparar para abrir la sala.</p>,
         calls: createdGame?.status === "playing" || createdGame?.status === "completed" ? <div className="import-result">
-          {createdGame.status === "playing" ? <p className="calls-guidance" role="status">Partida iniciada. Elige una canción pendiente para anunciarla a los jugadores.</p> : null}
+          {createdGame.status === "playing" ? <p className="calls-guidance" role="status">Partida iniciada. Elige una canción pendiente para anunciarla a los jugadores{playlistSongs.some(({ song }) => song.spotifyUri) ? " y cambiarla en Spotify" : ""}.</p> : null}
           {lastCalledSong ? <section className="import-result"><p className="field-label"><Icon name="volume" /> ÚLTIMA CANCIÓN ANUNCIADA</p><p><strong>{lastCalledSong.title}</strong> — {lastCalledSong.artist}</p></section> : <p>Aún no se ha anunciado ninguna canción.</p>}
           {calledSongs.length > 0 ? <section className="import-result"><p className="field-label"><Icon name="history" /> HISTORIAL DE CANCIONES</p><ol>{calledSongs.map(({ song, songId }) => <li key={`called-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol></section> : null}
-          {createdGame.status === "playing" ? <><p className="field-label" style={{ marginTop: 18 }}><Icon name="music" /> CANCIONES PENDIENTES</p>{pendingSongs.map(({ song, songId }) => <button className="button" disabled={pending} key={songId} onClick={() => callSong(songId)} type="button"><Icon name="music" /> {song.title} — {song.artist}</button>)}</> : null}
+          {createdGame.status === "playing" ? <><p className="field-label" style={{ marginTop: 18 }}><Icon name="music" /> CANCIONES PENDIENTES</p>{pendingSongs.map(({ song, songId }) => <button className="button" disabled={pending} key={songId} onClick={() => callSong(songId)} type="button"><Icon name="music" /> {song.spotifyUri ? "Reproducir y anunciar" : "Anunciar"}: {song.title} — {song.artist}</button>)}</> : null}
         </div> : <p>Inicia la partida para empezar a anunciar canciones.</p>,
         results: createdGame?.status === "completed" ? <section className="import-result"><ResultCelebration fullCardWinner={winnerName(fullCardWinnerPlayerId)} lineWinner={winnerName(lineWinnerPlayerId)} /><p>Inicio: <strong>{formatGameTimestamp(startedAt)}</strong></p><p>Fin: <strong>{formatGameTimestamp(completedAt)}</strong></p><p>{calledSongs.length} canciones anunciadas en total.</p>{calledSongs.length > 0 ? <ol className="result-song-list">{calledSongs.map(({ song, songId }) => <li key={`result-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol> : null}<button className="button button-secondary" onClick={() => { void copyGameSummary(); }} type="button"><Icon name="copy" /> Copiar resumen</button>{copyFeedback ? <p className="copy-feedback" role="status">{copyFeedback}</p> : null}</section> : <p>Los resultados estarán disponibles al finalizar la partida.</p>,
       }}

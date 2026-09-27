@@ -9,7 +9,7 @@ type SpotifyAuthorizeInput = {
 
 type SpotifyState = { expiresAt: number; nonce: string; sessionHash: string };
 
-const SPOTIFY_SCOPES = ["playlist-read-private", "playlist-read-collaborative"];
+const SPOTIFY_SCOPES = ["playlist-read-private", "playlist-read-collaborative", "user-modify-playback-state"];
 
 export function buildSpotifyAuthorizeUrl(input: SpotifyAuthorizeInput): string {
   const state = createSpotifyState(input.session, input.sessionSecret);

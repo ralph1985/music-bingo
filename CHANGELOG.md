@@ -6,6 +6,10 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 
 ## [Unreleased]
 
+### Añadido
+
+- Las canciones importadas desde Spotify conservan su URI y el botón **Reproducir y anunciar** cambia la reproducción en el dispositivo Spotify activo antes de registrar la canción en la partida.
+
 ## [0.2.0] - 2026-09-27
 
 ### Añadido

@@ -1,5 +1,5 @@
 import { ConvexCommandError, createGameCommand } from "../convex/admin-command";
-import { importPlaylist } from "../music/playlist-import";
+import { importPlaylist, ImportedSong } from "../music/playlist-import";
 import { prepareGamePlaylist } from "./game-playlist";
 import { generateJoinCode } from "./join-code";
 
@@ -11,6 +11,7 @@ type CreateAdminGameInput = {
   fetcher?: typeof fetch;
   randomBytes?: (size: number) => Uint8Array;
   secret: string;
+  songs?: ImportedSong[];
   text: string;
 };
 
@@ -19,9 +20,10 @@ export async function createAdminGame({
   fetcher,
   randomBytes,
   secret,
+  songs,
   text,
 }: CreateAdminGameInput): Promise<{ joinCode: string }> {
-  const imported = importPlaylist(text);
+  const imported = songs ? { errors: [], songs } : importPlaylist(text);
 
   if (imported.errors.length > 0) {
     throw new Error("Primero corrige las filas inválidas de la playlist.");
