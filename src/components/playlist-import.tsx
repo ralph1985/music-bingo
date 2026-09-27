@@ -112,6 +112,8 @@ export default function PlaylistImport() {
   const [spotifyPlaylist, setSpotifyPlaylist] = useState("");
   const [roomAction, setRoomAction] = useState<RoomAction>(null);
   const [songSearch, setSongSearch] = useState("");
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [historySearch, setHistorySearch] = useState("");
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const currentJoinCode = createdGame?.joinCode;
   const playerUrl = createdGame ? playerGameUrl(window.location.origin, createdGame.joinCode) : null;
@@ -149,6 +151,15 @@ export default function PlaylistImport() {
       .then(async (response) => response.ok ? await response.json() as { connected?: unknown } : null)
       .then((status) => setSpotifyConnected(status?.connected === true));
   }, []);
+
+  useEffect(() => {
+    if (!historyModalOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setHistoryModalOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [historyModalOpen]);
 
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -364,6 +375,8 @@ export default function PlaylistImport() {
     setPlayers([]);
     setResult(null);
     setSongSearch("");
+    setHistoryModalOpen(false);
+    setHistorySearch("");
     setStartedAt(null);
     setPlaylistText("");
     setPreviewedPlaylistText("");
@@ -398,6 +411,7 @@ export default function PlaylistImport() {
   const playlistSongs = result?.songs.map((song, index) => ({ song, songId: `song-${index + 1}` })) ?? [];
   const calledSongs = playlistSongs.filter(({ songId }) => calledSongIds.includes(songId));
   const pendingSongs = playlistSongs.filter(({ songId }) => !calledSongIds.includes(songId));
+  const filteredCalledSongs = calledSongs.filter(({ song }) => songMatchesSearch(song, historySearch));
   const filteredPendingSongs = pendingSongs.filter(({ song }) => songMatchesSearch(song, songSearch));
   const lastCalledSong = calledSongs.at(-1)?.song;
   const missingPlayersToStart = Math.max(0, 2 - players.length);
@@ -470,10 +484,30 @@ export default function PlaylistImport() {
         calls: createdGame?.status === "playing" || createdGame?.status === "completed" ? <div className="import-result">
           {createdGame.status === "playing" ? <p className="calls-guidance" role="status">Partida iniciada. Elige una canción pendiente para anunciarla a los jugadores{playlistSongs.some(({ song }) => song.spotifyUri) ? " y cambiarla en Spotify" : ""}.</p> : null}
           {lastCalledSong ? <section className="import-result"><p className="field-label"><Icon name="volume" /> ÚLTIMA CANCIÓN ANUNCIADA</p><p><strong>{lastCalledSong.title}</strong> — {lastCalledSong.artist}</p></section> : <p>Aún no se ha anunciado ninguna canción.</p>}
-          {calledSongs.length > 0 ? <details className="calls-history">
-            <summary><Icon name="history" /> Historial de canciones ({calledSongs.length})</summary>
-            <ol>{calledSongs.map(({ song, songId }) => <li key={`called-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>)}</ol>
-          </details> : null}
+          {calledSongs.length > 0 ? <>
+            <button aria-haspopup="dialog" className="calls-history-trigger" onClick={() => setHistoryModalOpen(true)} type="button"><Icon name="history" /> Historial de canciones ({calledSongs.length})</button>
+            {historyModalOpen ? <div aria-labelledby="calls-history-title" className="modal-backdrop calls-history-backdrop" role="dialog" aria-modal="true">
+              <section className="modal-card calls-history-modal">
+                <div className="calls-history-header">
+                  <div>
+                    <p className="field-label">HISTORIAL DE CANCIONES</p>
+                    <h2 id="calls-history-title">Canciones anunciadas</h2>
+                  </div>
+                  <button aria-label="Cerrar historial" autoFocus className="button button-secondary calls-history-close" onClick={() => setHistoryModalOpen(false)} type="button"><Icon name="x-circle" /></button>
+                </div>
+                <label className="field-label calls-search-label" htmlFor="history-search">BUSCAR EN EL HISTORIAL</label>
+                <input className="field calls-search" id="history-search" onChange={(event) => setHistorySearch(event.target.value)} placeholder="Título o artista" type="search" value={historySearch} />
+                <p className="calls-modal-count" role="status">{filteredCalledSongs.length} visibles de {calledSongs.length}</p>
+                <div className="calls-history-scroll-region">
+                  <ol className="calls-history-modal-list">
+                    {filteredCalledSongs.length > 0 ? filteredCalledSongs.map(({ song, songId }) => <li key={`called-${songId}`}><strong>{song.title}</strong> — {song.artist}</li>) : <li className="calls-empty">No hay canciones anunciadas que coincidan con la búsqueda.</li>}
+                  </ol>
+                  {filteredCalledSongs.length > 8 ? <p className="scroll-hint">Desliza dentro de la lista para ver más canciones ↓</p> : null}
+                </div>
+                <button className="button button-secondary calls-history-dismiss" onClick={() => setHistoryModalOpen(false)} type="button">Cerrar historial</button>
+              </section>
+            </div> : null}
+          </> : null}
           {createdGame.status === "playing" ? <section aria-labelledby="pending-songs-title" className="calls-pending-section">
             <div className="calls-controls">
               <div className="calls-counts" aria-label="Estado de canciones">
@@ -488,8 +522,11 @@ export default function PlaylistImport() {
             </div>
             <label className="field-label calls-search-label" htmlFor="song-search">BUSCAR CANCIÓN</label>
             <input className="field calls-search" id="song-search" onChange={(event) => setSongSearch(event.target.value)} placeholder="Título o artista" type="search" value={songSearch} />
-            <div className="calls-pending-list">
-              {filteredPendingSongs.length > 0 ? filteredPendingSongs.map(({ song, songId }) => <button className="button" disabled={pending} key={songId} onClick={() => callSong(songId)} type="button"><Icon name="music" /> {song.spotifyUri ? "Reproducir y anunciar" : "Anunciar"}: {song.title} — {song.artist}</button>) : <p className="calls-empty" role="status">No hay canciones pendientes que coincidan con la búsqueda.</p>}
+            <div className="calls-pending-scroll-region">
+              <div className="calls-pending-list">
+                {filteredPendingSongs.length > 0 ? filteredPendingSongs.map(({ song, songId }) => <button className="button" disabled={pending} key={songId} onClick={() => callSong(songId)} type="button"><Icon name="music" /> {song.spotifyUri ? "Reproducir y anunciar" : "Anunciar"}: {song.title} — {song.artist}</button>) : <p className="calls-empty" role="status">No hay canciones pendientes que coincidan con la búsqueda.</p>}
+              </div>
+              {filteredPendingSongs.length > 8 ? <p className="scroll-hint">Desliza dentro de la lista para ver más canciones ↓</p> : null}
             </div>
           </section> : null}
         </div> : <p>Inicia la partida para empezar a anunciar canciones.</p>,
