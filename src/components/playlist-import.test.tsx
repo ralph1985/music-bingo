@@ -79,6 +79,7 @@ describe("PlaylistImport", () => {
     expect(markup).toContain('role="alertdialog"');
     expect(markup).toContain("No se pudo reproducir");
     expect(markup).toContain("Reintentar");
+    expect(markup).toContain("Reconectar Spotify");
     expect(markup).toContain("La canción todavía no se ha anunciado");
   });
 

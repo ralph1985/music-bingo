@@ -77,6 +77,7 @@ export function PlaybackErrorModal({ message, onClose, onRetry }: { message: str
       <p className="playback-error-note">La canción todavía no se ha anunciado en la partida.</p>
       <div className="playback-error-actions">
         <button autoFocus className="button" onClick={onRetry} type="button"><Icon name="play" /> Reintentar</button>
+        {spotifyError ? <a className="button button-secondary" href="/api/admin/spotify/connect?returnTo=calls"><Icon name="spotify" /> Reconectar Spotify</a> : null}
         <button className="button button-secondary" onClick={onClose} type="button">Cerrar</button>
       </div>
     </section>
@@ -174,6 +175,16 @@ export default function PlaylistImport() {
     void fetch("/api/admin/spotify/status", { cache: "no-store" })
       .then(async (response) => response.ok ? await response.json() as { connected?: unknown } : null)
       .then((status) => setSpotifyConnected(status?.connected === true));
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const restoreCallsTab = params.get("tab") === "calls";
+    const restoreTimer = restoreCallsTab ? window.setTimeout(() => setActiveTab("calls"), 0) : null;
+    if (params.has("spotify")) window.history.replaceState({}, "", window.location.pathname);
+    return () => {
+      if (restoreTimer !== null) window.clearTimeout(restoreTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -562,7 +573,10 @@ export default function PlaylistImport() {
                 <p><strong>{calledSongs.length}</strong><span>Anunciadas</span></p>
                 <p><strong>{pendingSongs.length}</strong><span>Pendientes</span></p>
               </div>
-              <button className="button button-secondary calls-random-button" disabled={pending || pendingSongs.length === 0} onClick={callRandomSong} type="button"><Icon name="shuffle" /> Anunciar canción aleatoria</button>
+              <div className="calls-controls-actions">
+                <button className="button button-secondary calls-random-button" disabled={pending || pendingSongs.length === 0} onClick={callRandomSong} type="button"><Icon name="shuffle" /> Anunciar canción aleatoria</button>
+                {playlistSongs.some(({ song }) => song.spotifyUri) ? <a className="button button-secondary calls-reconnect-button" href="/api/admin/spotify/connect?returnTo=calls"><Icon name="spotify" /> {spotifyConnected ? "Reconectar Spotify" : "Conectar Spotify"}</a> : null}
+              </div>
             </div>
             <div className="calls-section-heading">
               <p className="field-label" id="pending-songs-title"><Icon name="music" /> CANCIONES PENDIENTES</p>
