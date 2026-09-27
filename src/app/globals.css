@@ -152,7 +152,7 @@ a {
 .calls-history-close { min-width: 48px; margin: 0; padding: 0 10px; }
 .calls-modal-count { margin-top: 10px; color: var(--muted); font-size: .75rem; }
 .calls-history-modal-list { display: grid; gap: 8px; max-height: min(52vh, 460px); margin: 10px 0 0; padding: 2px 6px 2px 24px; overflow-y: auto; overscroll-behavior: contain; scrollbar-color: #ffffff4d transparent; }
-.calls-history-modal-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border-radius: 9px; background: #ffffff0b; color: #e8dfef; line-height: 1.35; }
+.calls-history-modal-list li { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border-radius: 9px; background: #ffffff0b; color: #e8dfef; line-height: 1.35; }
 .replay-song-title { min-width: 0; flex: 1 1 12rem; }
 .replay-button { min-height: 40px; margin: 0; padding: 0 12px; font-size: .72rem; white-space: normal; }
 .calls-history-modal-list .calls-empty { margin-left: -24px; list-style: none; }
