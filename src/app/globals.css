@@ -82,6 +82,11 @@ a {
 .entry-card strong { font-size: 1.55rem; letter-spacing: -.04em; }
 .entry-card > span:not(.entry-icon):not(.entry-label):not(.entry-arrow) { max-width: 16rem; color: #d8cfe0; font-size: .9rem; line-height: 1.4; }
 .entry-arrow { position: absolute; right: 21px; bottom: 18px; width: 1.5rem; height: 1.5rem; color: var(--ink); }
+.beta-contact-cta { position: relative; display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding: 18px 22px; border: 1px solid #c6ff4355; border-radius: 22px; background: linear-gradient(135deg, #273d22, #18251d 68%); transition: transform .18s ease, border-color .18s ease; }
+.beta-contact-cta:hover, .beta-contact-cta:focus-visible { transform: translateY(-3px); border-color: var(--lime); outline: none; }
+.beta-contact-cta strong { font-size: 1.35rem; letter-spacing: -.04em; }
+.beta-contact-cta > span:not(.entry-label):not(.entry-arrow) { max-width: 28rem; color: #d8cfe0; font-size: .9rem; line-height: 1.4; }
+.beta-contact-cta .entry-arrow { color: var(--lime); }
 .preview-note { margin-top: auto; padding-top: 38px; text-align: center; }
 .topbar { display: flex; align-items: center; justify-content: space-between; padding: 24px 0 38px; }
 .back { color: var(--muted); font-size: .84rem; }

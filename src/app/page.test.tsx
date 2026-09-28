@@ -7,10 +7,14 @@ describe("Home", () => {
   it("presenta entradas separadas para administrar y jugar", () => {
     const page = renderToStaticMarkup(<Home />);
 
-    expect(page).toContain("Probar la beta");
+    expect(page).toContain("Organizar partida");
+    expect(page).toContain('href="/admin"');
     expect(page).toContain('href="mailto:hola@conquense.dev?');
     expect(page).toContain("subject=Quiero%20probar%20la%20beta%20de%20Bingo%20Musical");
+    expect(page).toContain("body=Hola%2C%0D%0A%0D%0AQuiero%20probar");
+    expect(page).toContain("Nombre%3A%0D%0AFecha%20aproximada%20de%20la%20partida%3A%0D%0AN%C3%BAmero%20de%20jugadores%3A");
     expect(page).toContain("Me%20comprometo%20a%20enviar%20feedback%20despu%C3%A9s%20de%20probarla.");
+    expect(page).toContain("Probar la beta");
     expect(page).toContain('data-icon="sliders"');
     expect(page).toContain("Entrar a jugar");
     expect(page).toContain('href="/play"');
