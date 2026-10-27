@@ -8,6 +8,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+## Cierre de procesos locales
+
+- Antes de terminar la sesión, detén todos los procesos locales que hayas iniciado para este proyecto (`pnpm dev`, `pnpm exec convex dev`, watchers y daemons auxiliares). Usa una parada ordenada y comprueba que no quedan procesos hijos ejecutándose. No dejes servidores ni daemons en segundo plano salvo petición explícita de Rafa.
+
 <!-- convex-ai-start -->
 
 This project uses [Convex](https://convex.dev) as its backend.
