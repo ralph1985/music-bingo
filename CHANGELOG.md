@@ -1,10 +1,6 @@
 # Changelog
 
-Todos los cambios relevantes de Bingo Musical se documentan en este archivo.
-
-El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones siguen [Versionado Semántico](https://semver.org/lang/es/). La versión publicada en `main` corresponde a `0.2.0`, con el tag `v0.2.0` y su release de GitHub.
-
-## [Unreleased]
+Cambios relevantes de Bingo Musical, organizados por versión.
 
 ## [0.3.0] - 2026-09-27
 
@@ -85,6 +81,5 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y l
 - Respuestas de jugador limitadas a los datos necesarios para jugar.
 - Alertas y actualizaciones de seguridad de Dependabot activadas en GitHub.
 
-[unreleased]: https://github.com/ralph1985/music-bingo/compare/v0.3.0...develop
 [0.3.0]: https://github.com/ralph1985/music-bingo/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ralph1985/music-bingo/compare/v0.1.0...v0.2.0
